@@ -1,0 +1,73 @@
+1. Entity “Scorecard” or “Dashboard” Reports
+What it shows
+For a chosen EntityID (e.g., “KENYA” or “BURUNDI”), display all relevant indicators in a single listing, including:
+
+The Indicator name
+The Baseline or starting value
+Latest achieved or most recently reported value
+The target for this period (e.g., “TargetYearTwo2025”)
+A quick status (On Track / Behind / Exceeded)
+Why it’s useful
+This is a standard executive summary for each entity’s performance. It answers: “How is Country X currently doing across all the indicators it is supposed to report?”
+
+
+
+
+Indicator vs. Target Over Time (Trend)
+What it shows
+For a given Entity (or region) and a specific indicator, plot or table out each year/period’s:
+
+Baseline PAD 2023
+Baseline 2024
+Target Year One 2024
+Target Year Two 2025
+…
+Achieved value (from mpa_reports.Response) – if stored per period
+The difference or percentage gap relative to the target
+Why it’s useful
+It shows whether the entity is consistently moving toward the target over multiple years (2024–2030). This is a classic time‐series analysis: “Are we trending up? On track for 2026? Or lagging behind?”
+
+
+
+
+3. Comparison of Multiple Entities on a Single Indicator
+What it shows
+Pick a single indicator (e.g., “% of project-supported laboratories that achieved a 3-star rating or higher…”) and compare how each country is doing in the same year. For instance, a table/graph:
+
+Entity	2025 Target	2025 Actual	Performance (%)
+KENYA	80.0	62.5	78% of target
+RWANDA	80.0	75.0	94% of target
+BURUNDI	80.0	40.0	50% of target
+ETHIOPIA	80.0	70.0	88% of target
+Why it’s useful
+Stakeholders can see cross‐country or cross‐region performance for a single crucial indicator. This is especially important for RRF indicators that are region‐wide.
+
+
+
+
+5. Time‐Series “Achievements vs. Baseline” for a Single Entity
+What it shows
+A historical timeline for a single entity, focusing on changes in a certain CRF indicator from:
+
+Baseline PAD 2023
+Baseline 2024
+Year 1 (2024) Achieved vs. Target
+Year 2 (2025) Achieved vs. Target
+Etc.
+Why it’s useful
+A country wants to see if it’s improved from baseline to subsequent years. The schema’s columns (BaselinePAD2023, Baseline2024, TargetYearOne2024, etc.) make this easy to chart.
+
+
+
+
+6. RRF “League Table” for Partner Countries
+What it shows
+For an RRF indicator (like “Countries that have developed a RCCE plan…”), produce a table ranking each country’s reported status. For example:
+
+RWANDA – Yes
+KENYA – Yes
+ETHIOPIA – No
+BURUNDI – No
+Why it’s useful
+Regional bodies (e.g., ECSA‐HC, IGAD) can see at a glance which countries have implemented that RRF requirement and which have not, enabling them to focus resources where needed.
+
