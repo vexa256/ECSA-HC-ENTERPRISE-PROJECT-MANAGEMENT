@@ -26,7 +26,7 @@ return new class extends Migration
             $table->index(['ClusterID', 'IndicatorID']);
 
             // Prevent duplicate targets for same cluster+indicator+year
-            $table->unique(['ClusterID', 'IndicatorID', 'Target_Year']);
+            $table->unique(['IndicatorID', 'Target_Year']);
         });
     }
 
