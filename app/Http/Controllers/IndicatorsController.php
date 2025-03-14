@@ -185,15 +185,15 @@ class IndicatorsController extends Controller
 
         // Build the update data array
         $updateData = [
-            'SO_ID'              => $validated['StrategicObjectiveID'],
-            'Indicator_Number'   => $validated['Indicator_Number'],
-            'Indicator_Name'     => $validated['Indicator_Name'],
-            'Baseline_2023_2024' => $validated['Baseline_2023_2024'] ?? null,
-            'Target_Year1'       => $validated['Target_Year1'] ?? null,
-            'Target_Year2'       => $validated['Target_Year2'] ?? null,
-            'Target_Year3'       => $validated['Target_Year3'] ?? null,
-            'ResponseType'       => $validated['ResponseType'] ?? null,
-            'updated_at'         => now(),
+            'SO_ID'            => $validated['StrategicObjectiveID'],
+            'Indicator_Number' => $validated['Indicator_Number'],
+            'Indicator_Name'   => $validated['Indicator_Name'],
+            // 'Baseline_2023_2024' => $validated['Baseline_2023_2024'] ?? null,
+            // 'Target_Year1'       => $validated['Target_Year1'] ?? null,
+            // 'Target_Year2'       => $validated['Target_Year2'] ?? null,
+            // 'Target_Year3'       => $validated['Target_Year3'] ?? null,
+            'ResponseType'     => $validated['ResponseType'] ?? null,
+            'updated_at'       => now(),
         ];
 
         // Only update the JSON field if Responsible_Cluster was included in the request
