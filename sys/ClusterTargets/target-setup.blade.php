@@ -1,4 +1,6 @@
 @php
+
+// dd($indicators);
     // Define the valid target timeframe – the lower bound for comparison.
     $validStartYear = 2024; // Hard-coded starting year
     $validEndYear = $validStartYear + 3; // 3 years ahead from starting year
@@ -251,25 +253,25 @@
     $soDataJson = json_encode($soData);
 @endphp
 
-<div class="min-h-screen bg-gray-100 flex flex-col font-sans">
+<div class="flex flex-col min-h-screen font-sans bg-gray-100">
     <!-- Sticky Header -->
-    <div class="navbar bg-white shadow-md sticky top-0">
+    <div class="sticky top-0 bg-white shadow-md navbar">
         <div class="flex-1">
-            <a class="btn btn-ghost normal-case text-xl text-gray-800">
-                <i class="iconify mr-2" data-icon="lucide:home"></i>
+            <a class="text-xl text-gray-800 normal-case btn btn-ghost">
+                <i class="mr-2 iconify" data-icon="lucide:home"></i>
                 {{ $cluster->Cluster_Name ?? 'Unknown Cluster' }}
             </a>
         </div>
         <div class="flex-none">
-            <button class="btn btn-outline btn-sm rounded-full text-gray-800" onclick="window.history.back()">
-                <i class="iconify mr-1" data-icon="lucide:arrow-left"></i>
+            <button class="text-gray-800 rounded-full btn btn-outline btn-sm" onclick="window.history.back()">
+                <i class="mr-1 iconify" data-icon="lucide:arrow-left"></i>
                 Back
             </button>
         </div>
     </div>
 
     <!-- Analytics Summary Section (Premium Cards) -->
-    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 gap-6 p-6 md:grid-cols-3">
         @php
             $totalIndicators = $indicators->flatten()->count();
             $withTarget = 0;
@@ -291,41 +293,41 @@
             $withoutTarget = $totalIndicators - $withTarget;
             $completionPercentage = $totalIndicators > 0 ? round(($withTarget / $totalIndicators) * 100) : 0;
         @endphp
-        <div class="card bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
-            <div class="card-body p-6">
-                <div class="flex justify-between items-center">
+        <div class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg card">
+            <div class="p-6 card-body">
+                <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="card-title text-lg font-semibold text-gray-800">Total Indicators</h2>
-                        <p class="text-4xl font-bold text-primary mt-2">{{ $totalIndicators }}</p>
+                        <h2 class="text-lg font-semibold text-gray-800 card-title">Total Indicators</h2>
+                        <p class="mt-2 text-4xl font-bold text-primary">{{ $totalIndicators }}</p>
                     </div>
-                    <div class="radial-progress bg-gray-200" style="--value:100; --size:4rem; --thickness: 0.5rem;">
-                        <i class="iconify text-2xl text-primary" data-icon="lucide:layers"></i>
+                    <div class="bg-gray-200 radial-progress" style="--value:100; --size:4rem; --thickness: 0.5rem;">
+                        <i class="text-2xl iconify text-primary" data-icon="lucide:layers"></i>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
-            <div class="card-body p-6">
-                <div class="flex justify-between items-center">
+        <div class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg card">
+            <div class="p-6 card-body">
+                <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="card-title text-lg font-semibold text-gray-800">With Valid Targets</h2>
-                        <p class="text-4xl font-bold text-success mt-2">{{ $withTarget }}</p>
+                        <h2 class="text-lg font-semibold text-gray-800 card-title">With Valid Targets</h2>
+                        <p class="mt-2 text-4xl font-bold text-success">{{ $withTarget }}</p>
                     </div>
-                    <div class="radial-progress bg-gray-200 text-success" style="--value:{{ $completionPercentage }}; --size:4rem; --thickness: 0.5rem;">
-                        <i class="iconify text-2xl" data-icon="lucide:check-circle"></i>
+                    <div class="bg-gray-200 radial-progress text-success" style="--value:{{ $completionPercentage }}; --size:4rem; --thickness: 0.5rem;">
+                        <i class="text-2xl iconify" data-icon="lucide:check-circle"></i>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
-            <div class="card-body p-6">
-                <div class="flex justify-between items-center">
+        <div class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg card">
+            <div class="p-6 card-body">
+                <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="card-title text-lg font-semibold text-gray-800">Need More Targets</h2>
-                        <p class="text-4xl font-bold text-warning mt-2">{{ $withoutTarget }}</p>
+                        <h2 class="text-lg font-semibold text-gray-800 card-title">Need More Targets</h2>
+                        <p class="mt-2 text-4xl font-bold text-warning">{{ $withoutTarget }}</p>
                     </div>
-                    <div class="radial-progress bg-gray-200 text-warning" style="--value:{{ 100 - $completionPercentage }}; --size:4rem; --thickness: 0.5rem;">
-                        <i class="iconify text-2xl" data-icon="lucide:x-circle"></i>
+                    <div class="bg-gray-200 radial-progress text-warning" style="--value:{{ 100 - $completionPercentage }}; --size:4rem; --thickness: 0.5rem;">
+                        <i class="text-2xl iconify" data-icon="lucide:x-circle"></i>
                     </div>
                 </div>
             </div>
@@ -334,9 +336,9 @@
 
     <!-- Target Timeframe Info Alert -->
     <div class="px-6 mb-2">
-        <div class="alert bg-blue-100 text-blue-800 shadow-lg rounded-lg">
+        <div class="text-blue-800 bg-blue-100 rounded-lg shadow-lg alert">
             <div>
-                <i class="iconify text-xl" data-icon="lucide:info"></i>
+                <i class="text-xl iconify" data-icon="lucide:info"></i>
                 <div>
                     <h3 class="font-bold">Target Timeframe: {{ $validStartYear }} and beyond</h3>
                     <div class="text-xs">
@@ -350,17 +352,17 @@
 
     <!-- Strategic Objective Metrics with Premium Graph -->
     <div class="p-6">
-        <div class="card bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden">
-            <div class="card-body p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="card-title text-xl font-bold text-gray-800">Strategic Objective Metrics</h2>
+        <div class="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg card">
+            <div class="p-6 card-body">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 card-title">Strategic Objective Metrics</h2>
                     <div class="flex gap-2">
-                        <button id="viewAllSOBtn" class="btn btn-outline btn-sm btn-primary rounded-full text-gray-800">
-                            <i class="iconify mr-1" data-icon="lucide:grid"></i>
+                        <button id="viewAllSOBtn" class="text-gray-800 rounded-full btn btn-outline btn-sm btn-primary">
+                            <i class="mr-1 iconify" data-icon="lucide:grid"></i>
                             View All SOs
                         </button>
-                        <button id="explainSOBtn" class="btn btn-outline btn-sm btn-primary rounded-full text-gray-800">
-                            <i class="iconify mr-1" data-icon="lucide:sparkles"></i>
+                        <button id="explainSOBtn" class="text-gray-800 rounded-full btn btn-outline btn-sm btn-primary">
+                            <i class="mr-1 iconify" data-icon="lucide:sparkles"></i>
                             Explain Graph
                         </button>
                     </div>
@@ -373,39 +375,39 @@
     <!-- Main Content: Tabs & Indicator Cards -->
     <div class="flex-1 p-6 overflow-auto">
         <!-- Tabs -->
-        <div class="tabs tabs-boxed bg-gray-200 rounded-lg mb-6 p-1">
-            <button class="tab tab-active transition-all duration-300 rounded-md text-gray-800" data-objective="all">
-                <i class="iconify mr-1" data-icon="lucide:layers"></i>
+        <div class="p-1 mb-6 bg-gray-200 rounded-lg tabs tabs-boxed">
+            <button class="text-gray-800 transition-all duration-300 rounded-md tab tab-active" data-objective="all">
+                <i class="mr-1 iconify" data-icon="lucide:layers"></i>
                 All
             </button>
             @foreach ($strategicObjectives as $objective)
-                <button class="tab transition-all duration-300 rounded-md text-gray-800" data-objective="{{ $objective }}">
-                    <i class="iconify mr-1" data-icon="lucide:tag"></i>
+                <button class="text-gray-800 transition-all duration-300 rounded-md tab" data-objective="{{ $objective }}">
+                    <i class="mr-1 iconify" data-icon="lucide:tag"></i>
                     {{ $objective }}
                 </button>
             @endforeach
         </div>
 
         <!-- Indicator Cards -->
-        <div id="indicatorsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div id="indicatorsGrid" class="grid grid-cols-1 gap-6 md:grid-cols-2">
             @foreach ($indicators as $objective => $indicatorGroup)
                 @foreach ($indicatorGroup as $indicator)
-                    <div class="card bg-white shadow-lg rounded-lg border border-gray-200 transition-all duration-300" data-objective="{{ $objective }}">
-                        <div class="card-body p-4">
+                    <div class="transition-all duration-300 bg-white border border-gray-200 rounded-lg shadow-lg card" data-objective="{{ $objective }}">
+                        <div class="p-4 card-body">
                             <div class="flex items-center justify-between mb-3">
                                 <div>
-                                    <h3 class="font-semibold text-lg text-gray-800">Indicator {{ $indicator->Indicator_Number }}</h3>
+                                    <h3 class="text-lg font-semibold text-gray-800">Indicator {{ $indicator->Indicator_Number }}</h3>
                                     <p class="text-sm text-gray-600">{{ $indicator->Indicator_Name }}</p>
-                                    <p class="text-xs text-gray-500 flex items-center mt-1">
-                                        <i class="iconify mr-1" data-icon="lucide:info"></i>
+                                    <p class="flex items-center mt-1 text-xs text-gray-500">
+                                        <i class="mr-1 iconify" data-icon="lucide:info"></i>
                                         {{ $indicator->ResponseType }}
                                     </p>
                                 </div>
-                                <span class="badge badge-outline rounded-full px-3 text-gray-800">{{ $objective }}</span>
+                                <span class="px-3 text-gray-800 rounded-full badge badge-outline">{{ $objective }}</span>
                             </div>
 
                             <!-- Existing Targets Display -->
-                            <div class="space-y-2 mb-4">
+                            <div class="mb-4 space-y-2">
                                 @if ($existingTargets->has($indicator->id))
                                     @foreach ($existingTargets[$indicator->id] as $target)
                                         @php
@@ -421,7 +423,7 @@
                                             <span class="font-medium">{{ $target->Target_Value }}</span>
                                             <div class="flex gap-1">
                                                 @if ($isLegacy)
-                                                    <span class="badge badge-sm badge-ghost text-gray-800">Legacy</span>
+                                                    <span class="text-gray-800 badge badge-sm badge-ghost">Legacy</span>
                                                 @else
                                                 @if(Auth::user()->AccountRole == 'Admin')
     <button class="btn btn-ghost btn-sm btn-circle edit-target-btn" data-indicator-id="{{ $indicator->id }}" data-target-id="{{ $target->id }}">
@@ -438,14 +440,14 @@
                                         </div>
                                     @endforeach
                                 @else
-                                    <div class="text-center text-sm text-gray-500 p-3 bg-gray-200 rounded-lg">No targets configured</div>
+                                    <div class="p-3 text-sm text-center text-gray-500 bg-gray-200 rounded-lg">No targets configured</div>
                                 @endif
                             </div>
 
                             @if(Auth::user()->AccountRole == 'Admin')
                             <!-- Set Target Button -->
-                            <button class="btn btn-primary btn-sm w-full rounded-lg transition-all duration-300 set-target-btn" data-indicator-id="{{ $indicator->id }}">
-                                <i class="iconify mr-1" data-icon="lucide:plus-circle"></i>
+                            <button class="w-full transition-all duration-300 rounded-lg btn btn-primary btn-sm set-target-btn" data-indicator-id="{{ $indicator->id }}">
+                                <i class="mr-1 iconify" data-icon="lucide:plus-circle"></i>
                                 Set Target
                             </button>
                         @endif
@@ -458,20 +460,20 @@
 
     <!-- Full Screen Target Graph Modal -->
     <dialog id="targetGraphModal" class="modal">
-        <div class="modal-box w-full h-full max-w-full p-0 flex flex-col bg-white">
+        <div class="flex flex-col w-full h-full max-w-full p-0 bg-white modal-box">
             <!-- Modal Header (Fixed) -->
-            <div class="modal-header bg-gray-100 dark:bg-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-md">
-                <h3 class="font-bold text-lg text-gray-800" id="graphModalTitle">Targets for Indicator</h3>
+            <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-gray-100 shadow-md modal-header dark:bg-gray-200">
+                <h3 class="text-lg font-bold text-gray-800" id="graphModalTitle">Targets for Indicator</h3>
                 <button class="btn btn-circle btn-ghost" id="closeTargetGraphBtn">
-                    <i class="iconify text-2xl" data-icon="lucide:x"></i>
+                    <i class="text-2xl iconify" data-icon="lucide:x"></i>
                 </button>
             </div>
             <!-- Modal Body (Scrollable) -->
-            <div class="overflow-y-auto flex-1">
+            <div class="flex-1 overflow-y-auto">
                 <div class="p-6">
-                    <div class="alert bg-blue-100 text-blue-800 mb-4 rounded-lg">
+                    <div class="mb-4 text-blue-800 bg-blue-100 rounded-lg alert">
                         <div>
-                            <i class="iconify text-xl" data-icon="lucide:info"></i>
+                            <i class="text-xl iconify" data-icon="lucide:info"></i>
                             <div>
                                 <h3 class="font-bold">Valid Target Ranges (e.g. 2024-2025)</h3>
                                 <div class="text-xs">
@@ -481,27 +483,27 @@
                             </div>
                         </div>
                     </div>
-                    <div id="targetLineChart" class="w-full h-80 mb-6"></div>
+                    <div id="targetLineChart" class="w-full mb-6 h-80"></div>
                     <div class="mt-4">
-                        <h4 class="font-semibold mb-2 text-gray-800">Target Status</h4>
+                        <h4 class="mb-2 font-semibold text-gray-800">Target Status</h4>
                         <div id="targetStatusInfo" class="text-sm text-gray-800"></div>
                     </div>
                 </div>
             </div>
             <!-- Modal Footer (Fixed) -->
-            <div class="modal-footer bg-gray-100 dark:bg-gray-200 px-6 py-4 sticky bottom-0 z-10 shadow-md">
+            <div class="sticky bottom-0 z-10 px-6 py-4 bg-gray-100 shadow-md modal-footer dark:bg-gray-200">
                 <form id="targetGraphForm" method="POST" action="" class="w-full space-y-4">
                     @csrf
                     <div id="methodOverride"></div>
                     <input type="hidden" name="ClusterID" value="{{ $cluster->ClusterID }}">
                     <input type="hidden" id="graphIndicatorID" name="IndicatorID">
                     <input type="hidden" id="graphResponseType" name="ResponseType">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text font-medium text-gray-800">Target Range</span>
+                                <span class="font-medium text-gray-800 label-text">Target Range</span>
                             </label>
-                            <select name="Target_Year" class="select select-bordered rounded-lg text-gray-800" required id="graphTargetYear">
+                            <select name="Target_Year" class="text-gray-800 rounded-lg select select-bordered" required id="graphTargetYear">
                                 @foreach($validRanges as $range)
                                     <option value="{{ $range }}">{{ $range }}</option>
                                 @endforeach
@@ -513,8 +515,8 @@
                         </div>
                     </div>
                     <div class="flex justify-end gap-4 mt-6">
-                        <button type="button" class="btn btn-outline rounded-lg text-gray-800" id="cancelTargetBtn">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-lg text-gray-800" id="graphSubmitButton">Save Target</button>
+                        <button type="button" class="text-gray-800 rounded-lg btn btn-outline" id="cancelTargetBtn">Cancel</button>
+                        <button type="submit" class="text-gray-800 rounded-lg btn btn-primary" id="graphSubmitButton">Save Target</button>
                     </div>
                 </form>
             </div>
@@ -523,16 +525,16 @@
 
     <!-- Delete Target Confirmation Modal -->
     <dialog id="deleteTargetModal" class="modal">
-        <div class="modal-box bg-white p-6 rounded-xl">
-            <h3 class="font-bold text-lg mb-4 text-gray-800">Confirm Delete</h3>
+        <div class="p-6 bg-white modal-box rounded-xl">
+            <h3 class="mb-4 text-lg font-bold text-gray-800">Confirm Delete</h3>
             <p class="text-gray-800">Are you sure you want to delete this target? This action cannot be undone.</p>
-            <div class="modal-action mt-6">
+            <div class="mt-6 modal-action">
                 <form method="POST" id="deleteTargetForm">
                     @csrf
                     @method('DELETE')
                     <div class="flex gap-4">
-                        <button type="button" class="btn btn-outline text-gray-800" id="cancelDeleteBtn">Cancel</button>
-                        <button type="submit" class="btn btn-error text-gray-800">Delete</button>
+                        <button type="button" class="text-gray-800 btn btn-outline" id="cancelDeleteBtn">Cancel</button>
+                        <button type="submit" class="text-gray-800 btn btn-error">Delete</button>
                     </div>
                 </form>
             </div>
@@ -541,21 +543,21 @@
 
     <!-- Full Screen Strategic Objectives Modal -->
     <dialog id="allSOModal" class="modal">
-        <div class="modal-box w-full h-full max-w-full p-0 flex flex-col bg-white">
+        <div class="flex flex-col w-full h-full max-w-full p-0 bg-white modal-box">
             <!-- Modal Header -->
-            <div class="modal-header bg-gray-100 dark:bg-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-md">
-                <h3 class="font-bold text-lg text-gray-800">All Strategic Objectives</h3>
+            <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-gray-100 shadow-md modal-header dark:bg-gray-200">
+                <h3 class="text-lg font-bold text-gray-800">All Strategic Objectives</h3>
                 <button class="btn btn-circle btn-ghost" id="closeAllSOBtn">
-                    <i class="iconify text-2xl" data-icon="lucide:x"></i>
+                    <i class="text-2xl iconify" data-icon="lucide:x"></i>
                 </button>
             </div>
             <!-- Modal Body (Scrollable) -->
-            <div class="overflow-y-auto flex-1">
+            <div class="flex-1 overflow-y-auto">
                 <div class="p-6">
                     <!-- Target Timeframe Info Alert -->
-                    <div class="alert bg-blue-100 text-blue-800 shadow-lg mb-6 rounded-lg">
+                    <div class="mb-6 text-blue-800 bg-blue-100 rounded-lg shadow-lg alert">
                         <div>
-                            <i class="iconify text-xl" data-icon="lucide:info"></i>
+                            <i class="text-xl iconify" data-icon="lucide:info"></i>
                             <div>
                                 <h3 class="font-bold">Target Timeframe: {{ $validStartYear }} - {{ $validEndYear }}</h3>
                                 <div class="text-xs">
@@ -566,15 +568,15 @@
                     </div>
 
                     <!-- Search and Filter -->
-                    <div class="mb-6 sticky top-0 z-10 bg-white py-2">
+                    <div class="sticky top-0 z-10 py-2 mb-6 bg-white">
                         <div class="relative">
-                            <input type="text" id="soSearchInput" placeholder="Search strategic objectives..." class="input input-bordered w-full pl-10 rounded-xl text-gray-800">
-                            <i class="iconify absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" data-icon="lucide:search"></i>
+                            <input type="text" id="soSearchInput" placeholder="Search strategic objectives..." class="w-full pl-10 text-gray-800 input input-bordered rounded-xl">
+                            <i class="absolute text-gray-400 transform -translate-y-1/2 iconify left-3 top-1/2" data-icon="lucide:search"></i>
                         </div>
                     </div>
 
                     <!-- Grid of SO Cards -->
-                    <div id="soCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div id="soCardsGrid" class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         @foreach ($indicators as $objective => $indicatorGroup)
                             @php
                                 $totalForSO = count($indicatorGroup);
@@ -597,14 +599,14 @@
                                 $withoutTargetForSO = $totalForSO - $withTargetForSO;
                                 $percentComplete = $totalForSO > 0 ? round(($withTargetForSO / $totalForSO) * 100) : 0;
                             @endphp
-                            <div class="so-card card bg-white shadow-lg rounded-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300" data-so-name="{{ $objective }}">
-                                <div class="card-body p-5">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h3 class="card-title text-base font-semibold text-gray-800">
-                                            <i class="iconify mr-2" data-icon="lucide:tag"></i>
+                            <div class="overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg shadow-lg so-card card hover:shadow-2xl" data-so-name="{{ $objective }}">
+                                <div class="p-5 card-body">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="text-base font-semibold text-gray-800 card-title">
+                                            <i class="mr-2 iconify" data-icon="lucide:tag"></i>
                                             {{ $objective }}
                                         </h3>
-                                        <button class="explain-so-detail-btn btn btn-ghost btn-sm btn-circle text-gray-800" data-objective="{{ $objective }}">
+                                        <button class="text-gray-800 explain-so-detail-btn btn btn-ghost btn-sm btn-circle" data-objective="{{ $objective }}">
                                             <i class="iconify text-primary" data-icon="lucide:sparkles"></i>
                                         </button>
                                     </div>
@@ -615,21 +617,21 @@
                                         <div class="space-y-1">
                                             <div class="flex items-center justify-between gap-2">
                                                 <span class="text-xs text-gray-500">Total:</span>
-                                                <span class="badge badge-sm text-gray-800">{{ $totalForSO }}</span>
+                                                <span class="text-gray-800 badge badge-sm">{{ $totalForSO }}</span>
                                             </div>
                                             <div class="flex items-center justify-between gap-2">
                                                 <span class="text-xs text-gray-500">With Target:</span>
-                                                <span class="badge badge-sm badge-success text-gray-800">{{ $withTargetForSO }}</span>
+                                                <span class="text-gray-800 badge badge-sm badge-success">{{ $withTargetForSO }}</span>
                                             </div>
                                             <div class="flex items-center justify-between gap-2">
                                                 <span class="text-xs text-gray-500">Without:</span>
-                                                <span class="badge badge-sm badge-warning text-gray-800">{{ $withoutTargetForSO }}</span>
+                                                <span class="text-gray-800 badge badge-sm badge-warning">{{ $withoutTargetForSO }}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="mt-2">
-                                        <div class="w-full bg-gray-200 rounded-full h-2">
-                                            <div class="bg-primary h-2 rounded-full" style="width: {{ $percentComplete }}%"></div>
+                                        <div class="w-full h-2 bg-gray-200 rounded-full">
+                                            <div class="h-2 rounded-full bg-primary" style="width: {{ $percentComplete }}%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -644,29 +646,29 @@
     <!-- AI Explanation Modal -->
     <dialog id="aiExplanationModal" class="modal">
         <div class="modal-box bg-white max-w-3xl p-0 rounded-2xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col h-[90vh]">
-            <div class="modal-header bg-gray-100 dark:bg-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-md">
-                <h3 class="font-bold text-lg text-gray-800" id="aiModalTitle">Graph Explanation</h3>
+            <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-gray-100 shadow-md modal-header dark:bg-gray-200">
+                <h3 class="text-lg font-bold text-gray-800" id="aiModalTitle">Graph Explanation</h3>
                 <button class="btn btn-circle btn-ghost" id="closeAIExplanationBtn">
-                    <i class="iconify text-2xl" data-icon="lucide:x"></i>
+                    <i class="text-2xl iconify" data-icon="lucide:x"></i>
                 </button>
             </div>
-            <div class="overflow-y-auto flex-1">
+            <div class="flex-1 overflow-y-auto">
                 <div class="p-6">
                     <div class="flex items-center gap-4 mb-6">
-                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <i class="iconify text-3xl text-primary" data-icon="lucide:sparkles"></i>
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
+                            <i class="text-3xl iconify text-primary" data-icon="lucide:sparkles"></i>
                         </div>
                         <div>
-                            <h4 class="font-semibold text-lg text-gray-800">AI Insights</h4>
+                            <h4 class="text-lg font-semibold text-gray-800">AI Insights</h4>
                             <p class="text-sm text-gray-500">Data interpretation and analysis</p>
                         </div>
                     </div>
-                    <div id="aiExplanationContent" class="prose max-w-none bg-gray-100 dark:bg-gray-200 p-6 rounded-xl border border-gray-200 text-gray-800">
+                    <div id="aiExplanationContent" class="p-6 prose text-gray-800 bg-gray-100 border border-gray-200 max-w-none dark:bg-gray-200 rounded-xl">
                         <div class="animate-pulse">
-                            <div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                            <div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-                            <div class="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
-                            <div class="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                            <div class="w-3/4 h-4 mb-4 bg-gray-200 rounded"></div>
+                            <div class="w-1/2 h-4 mb-4 bg-gray-200 rounded"></div>
+                            <div class="w-5/6 h-4 mb-4 bg-gray-200 rounded"></div>
+                            <div class="w-2/3 h-4 mb-4 bg-gray-200 rounded"></div>
                         </div>
                     </div>
                 </div>
@@ -787,17 +789,17 @@
             const targetValueContainer = document.getElementById('graphTargetValueContainer');
             switch (indicator.responseType) {
                 case 'Number':
-                    targetValueContainer.innerHTML = '<label class="label"><span class="label-text font-medium text-gray-800">Target Value</span></label><input type="number" name="Target_Value" class="input input-bordered rounded-lg text-gray-800" min="0" required id="graphTargetValue">';
+                    targetValueContainer.innerHTML = '<label class="label"><span class="font-medium text-gray-800 label-text">Target Value</span></label><input type="number" name="Target_Value" class="text-gray-800 rounded-lg input input-bordered" min="0" required id="graphTargetValue">';
                     break;
                 case 'Boolean':
-                    targetValueContainer.innerHTML = '<label class="label"><span class="label-text font-medium text-gray-800">Target Value</span></label><select name="Target_Value" class="select select-bordered rounded-lg text-gray-800" required id="graphTargetValue"><option value="true">True</option><option value="false">False</option></select>';
+                    targetValueContainer.innerHTML = '<label class="label"><span class="font-medium text-gray-800 label-text">Target Value</span></label><select name="Target_Value" class="text-gray-800 rounded-lg select select-bordered" required id="graphTargetValue"><option value="true">True</option><option value="false">False</option></select>';
                     break;
                 case 'Yes/No':
-                    targetValueContainer.innerHTML = '<label class="label"><span class="label-text font-medium text-gray-800">Target Value</span></label><select name="Target_Value" class="select select-bordered rounded-lg text-gray-800" required id="graphTargetValue"><option value="Yes">Yes</option><option value="No">No</option></select>';
+                    targetValueContainer.innerHTML = '<label class="label"><span class="font-medium text-gray-800 label-text">Target Value</span></label><select name="Target_Value" class="text-gray-800 rounded-lg select select-bordered" required id="graphTargetValue"><option value="Yes">Yes</option><option value="No">No</option></select>';
                     break;
                 case 'Text':
                 default:
-                    targetValueContainer.innerHTML = '<label class="label"><span class="label-text font-medium text-gray-800">Target Value</span></label><input type="text" name="Target_Value" class="input input-bordered rounded-lg text-gray-800" required id="graphTargetValue">';
+                    targetValueContainer.innerHTML = '<label class="label"><span class="font-medium text-gray-800 label-text">Target Value</span></label><input type="text" name="Target_Value" class="text-gray-800 rounded-lg input input-bordered" required id="graphTargetValue">';
                     break;
             }
             if (mode === 'edit') {
@@ -864,7 +866,7 @@
         let statusHtml = '';
         if (hasValidTargets) {
             statusHtml = `
-            <div class="alert bg-green-100 text-green-800 mb-3 rounded-lg">
+            <div class="mb-3 text-green-800 bg-green-100 rounded-lg alert">
                 <i class="iconify" data-icon="lucide:check-circle"></i>
                 <span>This indicator has ${validTargets.length} valid target (two-year range) from 2024 onwards (minimum of 1 required).</span>
             </div>
@@ -872,7 +874,7 @@
         } else {
             const neededTargets = Math.max(0, 1 - validTargets.length);
             statusHtml = `
-            <div class="alert bg-yellow-100 text-yellow-800 mb-3 rounded-lg">
+            <div class="mb-3 text-yellow-800 bg-yellow-100 rounded-lg alert">
                 <i class="iconify" data-icon="lucide:alert-triangle"></i>
                 <span>This indicator needs ${neededTargets} more target (two-year range) from 2024 onwards. Currently has ${validTargets.length} valid target.</span>
             </div>
@@ -880,7 +882,7 @@
         }
         if (legacyTargets.length > 0) {
             statusHtml += `
-            <div class="alert bg-blue-100 text-blue-800 mb-3 rounded-lg">
+            <div class="mb-3 text-blue-800 bg-blue-100 rounded-lg alert">
                 <i class="iconify" data-icon="lucide:info"></i>
                 <span>This indicator has ${legacyTargets.length} legacy target (two-year range) from before 2024. Legacy targets cannot be edited or deleted and are not counted.</span>
             </div>
@@ -911,7 +913,7 @@
             const aiExplanationContent = document.getElementById('aiExplanationContent');
             aiModalTitle.textContent = title;
             aiExplanationContent.innerHTML =
-                '<div class="animate-pulse"><div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div><div class="h-4 bg-gray-200 rounded w-1/2 mb-4"></div><div class="h-4 bg-gray-200 rounded w-5/6 mb-4"></div><div class="h-4 bg-gray-200 rounded w-2/3 mb-4"></div></div>';
+                '<div class="animate-pulse"><div class="w-3/4 h-4 mb-4 bg-gray-200 rounded"></div><div class="w-1/2 h-4 mb-4 bg-gray-200 rounded"></div><div class="w-5/6 h-4 mb-4 bg-gray-200 rounded"></div><div class="w-2/3 h-4 mb-4 bg-gray-200 rounded"></div></div>';
             aiExplanationModal.showModal();
             if (objective) {
                 generateSOSpecificInsights(objective);
@@ -944,18 +946,18 @@
                 const top5 = soDataAnalysis.slice(0, 5);
                 const bottom5 = [...soDataAnalysis].sort((a, b) => a.percentComplete - b.percentComplete).slice(0, 5);
                 let insights = `
-                <h3 class="text-lg font-semibold mb-4 text-gray-800">Target Setting Analysis for {{ $cluster->Cluster_Name }}</h3>
-                <div class="bg-info/10 p-4 rounded-xl mb-6 border border-info/20 text-gray-800">
-                    <p class="text-info font-medium mb-2">About This Analysis</p>
+                <h3 class="mb-4 text-lg font-semibold text-gray-800">Target Setting Analysis for {{ $cluster->Cluster_Name }}</h3>
+                <div class="p-4 mb-6 text-gray-800 border bg-info/10 rounded-xl border-info/20">
+                    <p class="mb-2 font-medium text-info">About This Analysis</p>
                     <p class="text-sm">This analysis focuses on <strong>target setting progress</strong> using two-year ranges. A strategic objective is considered complete when:</p>
-                    <ul class="list-disc pl-5 text-sm mt-2">
+                    <ul class="pl-5 mt-2 text-sm list-disc">
                         <li>Each indicator has <strong>at least 1 valid target</strong> (as a two-year range starting from 2024)</li>
                         <li>Only targets with a starting year from 2024 and later are counted as valid</li>
                         <li>Any target not matching the valid format is ignored or considered legacy</li>
                     </ul>
                 </div>
-                <div class="bg-base-200/50 p-4 rounded-xl mb-6 text-gray-800">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="p-4 mb-6 text-gray-800 bg-base-200/50 rounded-xl">
+                    <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
                         <div class="text-center">
                             <div class="text-4xl font-bold text-primary">${percentComplete}%</div>
                             <div class="text-sm text-gray-500">Target Setting Progress</div>
@@ -974,37 +976,37 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-success/10 p-4 rounded-xl border border-success/20 text-gray-800">
-                        <h4 class="font-semibold mb-3 text-success">Indicators with Valid Targets</h4>
-                        <div class="max-h-60 overflow-y-auto pr-2">
+                <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
+                    <div class="p-4 text-gray-800 border bg-success/10 rounded-xl border-success/20">
+                        <h4 class="mb-3 font-semibold text-success">Indicators with Valid Targets</h4>
+                        <div class="pr-2 overflow-y-auto max-h-60">
                             ${top5.map(so => `
-                                <li class="flex justify-between items-center">
+                                <li class="flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-800">${so.objective}</span>
-                                    <span class="badge badge-success text-gray-800">${so.percentComplete}%</span>
+                                    <span class="text-gray-800 badge badge-success">${so.percentComplete}%</span>
                                 </li>
                             `).join('')}
                         </div>
                     </div>
-                    <div class="bg-warning/10 p-4 rounded-xl border border-warning/20 text-gray-800">
-                        <h4 class="font-semibold mb-3 text-warning">Needs Target Setting Attention</h4>
-                        <div class="max-h-60 overflow-y-auto pr-2">
+                    <div class="p-4 text-gray-800 border bg-warning/10 rounded-xl border-warning/20">
+                        <h4 class="mb-3 font-semibold text-warning">Needs Target Setting Attention</h4>
+                        <div class="pr-2 overflow-y-auto max-h-60">
                             ${bottom5.map(so => `
-                                <li class="flex justify-between items-center">
+                                <li class="flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-800">${so.objective}</span>
-                                    <span class="badge badge-warning text-gray-800">${so.percentComplete}%</span>
+                                    <span class="text-gray-800 badge badge-warning">${so.percentComplete}%</span>
                                 </li>
                             `).join('')}
                         </div>
                     </div>
                 </div>
-                <h4 class="font-semibold mt-5 mb-2 text-gray-800">Strategic Recommendations:</h4>
-                <ul class="list-disc pl-5 space-y-2 mb-4 text-gray-800">
+                <h4 class="mt-5 mb-2 font-semibold text-gray-800">Strategic Recommendations:</h4>
+                <ul class="pl-5 mb-4 space-y-2 text-gray-800 list-disc">
                     <li>Prioritize setting at least 1 valid target (two-year range) from 2024 onwards for indicators in ${worstSO.objective}</li>
                     <li>Review any legacy or invalid targets and consider setting a new valid target from 2024 onwards</li>
                     <li>Consider replicating the target-setting approach from ${bestSO.objective} to other areas</li>
                 </ul>
-                <div class="mt-5 p-4 bg-primary/10 rounded-lg border border-primary/20 text-gray-800">
+                <div class="p-4 mt-5 text-gray-800 border rounded-lg bg-primary/10 border-primary/20">
                     <p class="font-medium text-primary">This analysis focuses on target setting completeness using two-year ranges. Valid target setting is essential for effective monitoring and evaluation.</p>
                 </div>
                 `;
@@ -1022,18 +1024,18 @@
                 const soInfo = soData[objective];
                 if (!soInfo) { console.error('Strategic objective not found:', objective); return; }
                 let detailedAnalysis = `
-                <h3 class="text-lg font-semibold mb-4 text-gray-800">${objective} - Target Setting Analysis</h3>
-                <div class="bg-info/10 p-4 rounded-xl mb-6 border border-info/20 text-gray-800">
-                    <p class="text-info font-medium mb-2">About This Analysis</p>
+                <h3 class="mb-4 text-lg font-semibold text-gray-800">${objective} - Target Setting Analysis</h3>
+                <div class="p-4 mb-6 text-gray-800 border bg-info/10 rounded-xl border-info/20">
+                    <p class="mb-2 font-medium text-info">About This Analysis</p>
                     <p class="text-sm">This analysis focuses on <strong>target setting progress</strong> using two-year ranges. An indicator is considered complete when:</p>
-                    <ul class="list-disc pl-5 text-sm mt-2">
+                    <ul class="pl-5 mt-2 text-sm list-disc">
                         <li>It has <strong>at least 1 valid target</strong> (as a two-year range starting from 2024)</li>
                         <li>Only targets with a starting year from 2024 and later are counted as valid</li>
                         <li>Any target not matching the valid format is ignored or considered legacy</li>
                     </ul>
                 </div>
-                <div class="bg-base-200/50 p-4 rounded-xl mb-6 text-gray-800">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="p-4 mb-6 text-gray-800 bg-base-200/50 rounded-xl">
+                    <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
                         <div class="text-center">
                             <div class="text-4xl font-bold text-primary">${soInfo.percentComplete}%</div>
                             <div class="text-sm text-gray-500">Target Setting Progress</div>
@@ -1052,21 +1054,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-success/10 p-4 rounded-xl border border-success/20 text-gray-800">
-                        <h4 class="font-semibold mb-3 text-success">Indicators with Valid Targets</h4>
-                        <div class="max-h-60 overflow-y-auto pr-2">
+                <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
+                    <div class="p-4 text-gray-800 border bg-success/10 rounded-xl border-success/20">
+                        <h4 class="mb-3 font-semibold text-success">Indicators with Valid Targets</h4>
+                        <div class="pr-2 overflow-y-auto max-h-60">
                             ${soInfo.indicatorsWithTargets.length > 0 ? `
                                 <ul class="space-y-2">
                                     ${soInfo.indicatorsWithTargets.map(indicator => {
                                         let validRanges = indicator.validTargets.map(t => t.year).join(', ');
                                         let legacyRanges = indicator.legacyTargets.length > 0 ?
-                                            `<div class="text-xs text-gray-500 mt-1">Legacy ranges (before 2024): ${indicator.legacyTargets.map(t => t.year).join(', ')}</div>` : '';
+                                            `<div class="mt-1 text-xs text-gray-500">Legacy ranges (before 2024): ${indicator.legacyTargets.map(t => t.year).join(', ')}</div>` : '';
                                         return `
                                             <li class="text-sm text-gray-800">
                                                 <div class="font-medium">${indicator.number}</div>
                                                 <div class="text-xs text-gray-600">${indicator.name}</div>
-                                                <div class="text-xs text-success mt-1">Valid ranges (2024+): ${validRanges}</div>
+                                                <div class="mt-1 text-xs text-success">Valid ranges (2024+): ${validRanges}</div>
                                                 ${legacyRanges}
                                             </li>
                                         `;
@@ -1075,9 +1077,9 @@
                             ` : `<p class="text-sm text-gray-500">No indicators have valid targets set for this objective</p>`}
                         </div>
                     </div>
-                    <div class="bg-warning/10 p-4 rounded-xl border border-warning/20 text-gray-800">
-                        <h4 class="font-semibold mb-3 text-warning">Indicators Needing More Targets</h4>
-                        <div class="max-h-60 overflow-y-auto pr-2">
+                    <div class="p-4 text-gray-800 border bg-warning/10 rounded-xl border-warning/20">
+                        <h4 class="mb-3 font-semibold text-warning">Indicators Needing More Targets</h4>
+                        <div class="pr-2 overflow-y-auto max-h-60">
                             ${soInfo.indicatorsWithoutTargets.length > 0 ? `
                                 <ul class="space-y-2">
                                     ${soInfo.indicatorsWithoutTargets.map(indicator => {
@@ -1085,14 +1087,14 @@
                                         let legacyTargetsHtml = '';
                                         if (indicator.validTargets && indicator.validTargets.length > 0) {
                                             validTargetsHtml = `
-                                                <div class="text-xs text-gray-500 mt-1">
+                                                <div class="mt-1 text-xs text-gray-500">
                                                     Current valid ranges (2024+): ${indicator.validTargets.map(t => t.year).join(', ')}
                                                 </div>
                                             `;
                                         }
                                         if (indicator.legacyTargets && indicator.legacyTargets.length > 0) {
                                             legacyTargetsHtml = `
-                                                <div class="text-xs text-gray-500 mt-1">
+                                                <div class="mt-1 text-xs text-gray-500">
                                                     Legacy ranges (before 2024): ${indicator.legacyTargets.map(t => t.year).join(', ')}
                                                 </div>
                                             `;
@@ -1103,8 +1105,8 @@
                                                 <div class="text-xs text-gray-600">${indicator.name}</div>
                                                 ${validTargetsHtml}
                                                 ${legacyTargetsHtml}
-                                                <div class="text-xs text-warning mt-1">
-                                                    <i class="iconify mr-1" data-icon="lucide:alert-triangle"></i>
+                                                <div class="mt-1 text-xs text-warning">
+                                                    <i class="mr-1 iconify" data-icon="lucide:alert-triangle"></i>
                                                     ${indicator.reason}
                                                 </div>
                                             </li>
@@ -1115,7 +1117,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-5 p-4 bg-primary/10 rounded-lg border border-primary/20 text-gray-800">
+                <div class="p-4 mt-5 text-gray-800 border rounded-lg bg-primary/10 border-primary/20">
                     <p class="font-medium text-primary">This analysis focuses on target setting completeness using two-year ranges. Valid target setting is essential for effective monitoring and evaluation.</p>
                 </div>
                 `;

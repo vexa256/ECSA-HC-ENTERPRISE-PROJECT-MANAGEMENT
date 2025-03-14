@@ -100,6 +100,7 @@ class ClusterTargetController extends Controller
             $ranges[] = $year . '-' . ($year + 1);
         }
 
+        // dd($existingTargets);
         return $this->renderView('ClusterTargets.target-setup', [
             'cluster'             => $cluster,
             'strategicObjectives' => $indicators->keys(),
