@@ -1,167 +1,114 @@
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
+<header class="mb-6">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-semibold tracking-tight">
                     Select Cluster for Reporting
                 </h2>
-                <p class="text-muted mt-1">{{ $Desc }}</p>
+                <p class="text-sm text-neutral-500 mt-1">{{ $Desc }}</p>
             </div>
-            <div class="col-auto ms-auto d-print-none">
-                <a href="{{ route('Ecsa_SelectTimeline') }}" class="btn btn-ghost-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-left"
-                        width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                        <path d="M5 12l14 0"></path>
-                        <path d="M5 12l6 6"></path>
-                        <path d="M5 12l6 -6"></path>
+            <div>
+                <a href="{{ route('Ecsa_SelectTimeline') }}" class="btn btn-outline" aria-label="Back to user selection">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="mr-2">
+                        <path d="m12 19-7-7 7-7"></path>
+                        <path d="M19 12H5"></path>
                     </svg>
                     Back to User Selection
                 </a>
             </div>
         </div>
     </div>
-</div>
-<div class="page-body">
-    <div class="container-xl">
-        <div class="row g-4">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title mb-4">Select a Cluster for {{ $userName }}</h3>
-                        <form action="{{ route('Ecsa_SelectTimeline') }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="UserID" value="{{ $user->UserID }}">
-                            <input type="hidden" name="userName" value="{{ $userName }}">
-                            <div class="form-floating mb-3">
-                                <select class="form-select @error('ClusterID') is-invalid @enderror" id="ClusterID"
-                                    name="ClusterID" required data-bs-toggle="select"
-                                    data-placeholder="Choose a cluster..." data-allow-clear="true">
-                                    <option value="">Select a cluster...</option>
-                                    @foreach ($clusters as $cluster)
-                                        <option value="{{ $cluster->ClusterID }}"
-                                            {{ old('ClusterID') == $cluster->ClusterID ? 'selected' : '' }}>
-                                            {{ $cluster->Cluster_Name }} - {{ $cluster->Description }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <label for="ClusterID">Select Cluster</label>
-                                @error('ClusterID')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="mt-4">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="icon icon-tabler icon-tabler-chart-dots" width="24" height="24"
-                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M3 3v18h18"></path>
-                                        <path d="M9 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                        <path d="M19 7m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                        <path d="M14 15m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                        <path d="M10.16 10.62l2.34 2.88"></path>
-                                        <path d="M15.088 13.328l2.837 -4.586"></path>
-                                    </svg>
-                                    Continue to Timeline Selection
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card bg-azure-lt">
-                    <div class="card-body">
-                        <h3 class="card-title text-azure">Selected User Details</h3>
-                        <div class="datagrid">
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">Name</div>
-                                <div class="datagrid-content">{{ $userName }}</div>
-                            </div>
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">Email</div>
-                                <div class="datagrid-content">{{ $user->email }}</div>
-                            </div>
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">Job Title</div>
-                                <div class="datagrid-content">{{ $user->JobTitle ?? 'N/A' }}</div>
-                            </div>
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">Organization</div>
-                                <div class="datagrid-content">{{ $user->ParentOrganization ?? 'N/A' }}</div>
-                            </div>
+</header>
+
+<main class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <section class="md:col-span-8">
+            <div
+                class="card bg-base-100 shadow-sm rounded-xl overflow-hidden transition-all duration-200 hover:shadow-md">
+                <div class="card-body p-6">
+                    <h3 class="card-title text-xl font-medium mb-5">Select a Cluster for {{ $userName }}</h3>
+                    <form action="{{ route('Ecsa_SelectTimeline') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="UserID" value="{{ $user->UserID }}">
+                        <input type="hidden" name="userName" value="{{ $userName }}">
+
+                        <div class="form-control w-full mb-6">
+                            <label for="ClusterID" class="label">
+                                <span class="label-text font-medium">Select Cluster</span>
+                            </label>
+                            <select
+                                class="select select-bordered w-full h-12 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 @error('ClusterID') select-error @enderror"
+                                id="ClusterID" name="ClusterID" required aria-required="true"
+                                aria-invalid="@error('ClusterID') true @else false @enderror">
+                                <option value="" disabled selected>Select a cluster...</option>
+                                @foreach ($clusters as $cluster)
+                                    <option value="{{ $cluster->ClusterID }}"
+                                        {{ old('ClusterID') == $cluster->ClusterID ? 'selected' : '' }}>
+                                        {{ $cluster->Cluster_Name }} - {{ $cluster->Description }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('ClusterID')
+                                <label class="label">
+                                    <span class="label-text-alt text-error text-sm">{{ $message }}</span>
+                                </label>
+                            @enderror
                         </div>
-                    </div>
-                </div>
-                <div class="card mt-4 bg-yellow-lt">
-                    <div class="card-body">
-                        <h3 class="card-title text-yellow">Why Select a Cluster?</h3>
-                        <p class="text-muted">Selecting a cluster allows us to:</p>
-                        <ul class="list-unstyled space-y-1">
-                            <li class="d-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="icon icon-tabler icon-tabler-check text-yellow" width="24" height="24"
-                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M5 12l5 5l10 -10"></path>
+
+                        <div class="mt-8">
+                            <button type="submit" class="btn btn-neutral w-full h-12 group">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="mr-2 transition-transform duration-300 group-hover:translate-x-1">
+                                    <path d="M3 3v18h18"></path>
+                                    <circle cx="9" cy="9" r="2"></circle>
+                                    <circle cx="19" cy="7" r="2"></circle>
+                                    <circle cx="14" cy="15" r="2"></circle>
+                                    <path d="m10.16 10.62 2.34 2.88"></path>
+                                    <path d="m15.088 13.328 2.837-4.586"></path>
                                 </svg>
-                                <span class="ms-2">Focus on specific areas of responsibility</span>
-                            </li>
-                            <li class="d-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="icon icon-tabler icon-tabler-check text-yellow" width="24"
-                                    height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M5 12l5 5l10 -10"></path>
-                                </svg>
-                                <span class="ms-2">Streamline the reporting process</span>
-                            </li>
-                            <li class="d-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="icon icon-tabler icon-tabler-check text-yellow" width="24"
-                                    height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M5 12l5 5l10 -10"></path>
-                                </svg>
-                                <span class="ms-2">Ensure accurate data categorization</span>
-                            </li>
-                        </ul>
-                    </div>
+                                Continue to Timeline Selection
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </div>
+        </section>
+
+
     </div>
-</div>
+</main>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        var el;
-        window.TomSelect && (new TomSelect(el = document.getElementById('ClusterID'), {
-            copyClassesToDropdown: false,
-            dropdownParent: 'body',
-            controlInput: '<input>',
-            render: {
-                item: function(data, escape) {
-                    if (data.customProperties) {
-                        return '<div><span class="dropdown-item-indicator">' + data
-                            .customProperties + '</span>' + escape(data.text) + '</div>';
-                    }
-                    return '<div>' + escape(data.text) + '</div>';
-                },
-                option: function(data, escape) {
-                    if (data.customProperties) {
-                        return '<div><span class="dropdown-item-indicator">' + data
-                            .customProperties + '</span>' + escape(data.text) + '</div>';
-                    }
-                    return '<div>' + escape(data.text) + '</div>';
-                },
-            },
-        }));
+        // Enhanced select functionality
+        const selectElement = document.getElementById('ClusterID');
+
+        // Add focus and blur event listeners for micro-interactions
+        selectElement.addEventListener('focus', function() {
+            this.parentElement.classList.add('select-focused');
+        });
+
+        selectElement.addEventListener('blur', function() {
+            this.parentElement.classList.remove('select-focused');
+        });
+
+        // Optional: Add haptic feedback for mobile devices
+        selectElement.addEventListener('change', function() {
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(50); // Subtle vibration on select change
+            }
+        });
+
+        // Keyboard navigation enhancement
+        selectElement.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
     });
 </script>

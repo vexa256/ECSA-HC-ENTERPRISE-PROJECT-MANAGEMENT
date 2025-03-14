@@ -1,145 +1,153 @@
-<div class="container-fluid p-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-            <h1 class="display-4 text-center mb-3">Select a Year</h1>
-            <p class="text-muted text-center mb-5">
-                Cluster:
-                <span class="badge bg-blue-lt fs-5">
-                    <i class="fas fa-layer-group me-1"></i>
-                    @if (isset($selectedCluster))
-                        {{ $selectedCluster === 'All clusters' ? 'All Clusters' : $clusters->firstWhere('ClusterID', $selectedCluster)->Cluster_Name ?? 'Unknown Cluster' }}
-                    @else
-                        All Clusters
-                    @endif
-                </span>
-            </p>
-            <div class="card">
-                <div class="card-body">
-                    <div class="timeline">
-                        @foreach ($years as $year)
-                            <div class="timeline-event">
-                                <div class="timeline-event-icon bg-primary-lt">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </div>
-                                <div class="card timeline-event-card cursor-pointer year-card"
-                                    data-year="{{ $year }}">
-                                    <div class="card-body">
-                                        <h3 class="card-title">{{ $year }}</h3>
-                                        <p class="text-muted">
-                                            <i class="fas fa-chart-line me-1"></i>
-                                            Performance data for {{ $year }}
-                                        </p>
-                                        <div class="mt-3">
-                                            <span class="badge bg-green-lt me-2">
-                                                <i class="fas fa-check me-1"></i>
-                                                {{ rand(80, 95) }}% Complete
-                                            </span>
-                                            <span class="badge bg-yellow-lt">
-                                                <i class="fas fa-file-alt me-1"></i>
-                                                {{ rand(3, 8) }} Reports
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+@php
+    // The backend supplies the collection of years.
+    // For example, your controller might pass:
+    // $years = collect(range(date('Y'), date('Y') - 50))->forPage($currentPage, $yearsPerPage);
+@endphp
+
+<div x-data="yearSelection()" class="year-selection">
+    <h2 class="text-3xl font-semibold mb-4 text-center">Select a Year</h2>
+    <p class="text-gray-600 mb-8 text-center">
+        Cluster:
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                </path>
+            </svg>
+            {{ isset($selectedCluster)
+                ? ($selectedCluster === 'All clusters'
+                    ? 'All Clusters'
+                    : $clusters->firstWhere('ClusterID', $selectedCluster)->Cluster_Name ?? 'Unknown Cluster')
+                : 'All Clusters' }}
+        </span>
+    </p>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" x-ref="yearGrid">
+        <template x-for="year in visibleYears" :key="year">
+            <div class="year-card" :class="{ 'opacity-0': !isInViewport($el) }"
+                x-intersect="if($el.classList.contains('opacity-0')) $el.classList.remove('opacity-0')"
+                @click="selectYear(year)" tabindex="0" @keydown.enter="selectYear(year)" role="button"
+                :aria-label="`Select year ${year}`">
+                <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-6">
+                    <h3 class="text-2xl font-semibold mb-2" x-text="year"></h3>
+                    <p class="text-gray-600 mb-4">
+                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                        Performance data for <span x-text="year"></span>
+                    </p>
+                    <div class="flex space-x-2">
+                        <span
+                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span x-text="`${Math.floor(Math.random() * 15) + 80}% Complete`"></span>
+                        </span>
+                        <span
+                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            <span x-text="`${Math.floor(Math.random() * 5) + 3} Reports`"></span>
+                        </span>
                     </div>
                 </div>
             </div>
-        </div>
+        </template>
     </div>
+
+    <form id="year-form" action="{{ route('select-report') }}" method="POST" class="hidden" x-ref="yearForm">
+        @csrf
+        <input type="hidden" name="cluster" value="{{ $selectedCluster }}">
+        <input type="hidden" name="year" x-ref="selectedYear">
+    </form>
 </div>
 
-<form id="year-form" action="{{ route('select-report') }}" method="POST" class="d-none">
-    @csrf
-    <input type="hidden" name="cluster" value="{{ $selectedCluster }}">
-    <input type="hidden" name="year" id="selected-year">
-</form>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const yearCards = document.querySelectorAll('.year-card');
-        const yearForm = document.getElementById('year-form');
-        const selectedYearInput = document.getElementById('selected-year');
+    function yearSelection() {
+        return {
+            // Only the backend-supplied years are used
+            visibleYears: @json($years),
 
-        yearCards.forEach(card => {
-            card.addEventListener('click', function() {
-                const year = this.dataset.year;
-                selectedYearInput.value = year;
-                yearForm.submit();
-            });
+            selectYear(year) {
+                this.$refs.selectedYear.value = year;
+                this.$refs.yearForm.submit();
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(50);
+                }
+            },
 
-            card.addEventListener('mouseenter', function() {
-                this.classList.add('shadow-lg');
-                this.style.transform = 'translateY(-5px) scale(1.02)';
-            });
-
-            card.addEventListener('mouseleave', function() {
-                this.classList.remove('shadow-lg');
-                this.style.transform = 'translateY(0) scale(1)';
-            });
-        });
-    });
+            isInViewport(element) {
+                const rect = element.getBoundingClientRect();
+                return (
+                    rect.top >= 0 &&
+                    rect.left >= 0 &&
+                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                );
+            }
+        }
+    }
 </script>
 
 <style>
-    .timeline {
-        position: relative;
-        padding-left: 3rem;
-        margin-bottom: 3rem;
+    .year-selection {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
-    .timeline:before {
-        content: '';
-        position: absolute;
-        left: 1rem;
-        top: 0;
-        height: 100%;
-        width: 2px;
-        background: #e9ecef;
+    .year-card {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
-    .timeline-event {
-        position: relative;
-        margin-bottom: 2rem;
+    .year-card:hover {
+        transform: translateY(-2px);
     }
 
-    .timeline-event-icon {
-        position: absolute;
-        left: -3.5rem;
-        top: 0.5rem;
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 50%;
-        text-align: center;
-        font-size: 1rem;
-        line-height: 2.5rem;
-        transition: all 0.3s ease;
+    .year-card:active {
+        transform: translateY(0);
     }
 
-    .timeline-event-card {
-        transition: all 0.3s ease;
-    }
-
-    .cursor-pointer {
-        cursor: pointer;
-    }
-
-    .year-card:hover .timeline-event-icon {
-        transform: scale(1.2);
-    }
-
-    @media (max-width: 768px) {
-        .timeline {
-            padding-left: 1.5rem;
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
         }
 
-        .timeline-event-icon {
-            left: -2rem;
-            width: 2rem;
-            height: 2rem;
-            line-height: 2rem;
-            font-size: 0.875rem;
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
+    }
+
+    .opacity-0 {
+        opacity: 0;
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .year-card:focus-visible {
+        outline: 2px solid #007AFF;
+        outline-offset: 2px;
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
     }
 </style>

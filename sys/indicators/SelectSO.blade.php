@@ -1,35 +1,39 @@
-<div class="col-12">
-    <div class="card">
+<!-- resources/views/ecsaIndicators/select-strategic-objective.blade.php -->
+
+<div class="w-full px-2 py-2">
+    <!-- Card Container -->
+    <div class="card w-full bg-base-100 shadow-xl rounded-lg">
         <!-- Card Header -->
-        <div class="card-header">
-            <h4 class="card-title">
+        <div class="card-body border-b">
+            <h4 class="text-xl font-bold">
                 {{ $Desc }}
             </h4>
         </div>
+
         <!-- Card Body -->
         <div class="card-body">
-            <!-- Replace the '#' with your desired form action route -->
+            <!-- Form -->
             <form action="{{ route('MgtEcsaIndicators') }}" method="GET">
                 @csrf
-
-                <!-- Searchable Auto-Complete Select (using Tabler's data-bs-toggle="select") -->
-                <div class="mb-3">
-                    <label class="form-label" for="StrategicObjectiveID">Strategic Objective</label>
-                    <select class="form-select" data-bs-toggle="select"
-                        data-bs-placeholder="Search or select an option..." id="StrategicObjectiveID"
-                        name="StrategicObjectiveID" required>
+                <!-- Strategic Objective Select -->
+                <div class="form-control mb-4">
+                    <label class="label font-semibold" for="StrategicObjectiveID">
+                        <span class="label-text">Strategic Objective</span>
+                    </label>
+                    <select id="StrategicObjectiveID" name="StrategicObjectiveID" class="select select-bordered w-full"
+                        required>
                         <option value="" disabled selected>Please select...</option>
                         @foreach ($strategicObjectives as $obj)
                             <option value="{{ $obj->StrategicObjectiveID }}">
-                                {{ $obj->SO_Number }}
+                                {{ $obj->SO_Number }} {{ $obj->Description }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
                 <!-- Submit Button -->
-                <div class="mb-3 float-end">
-                    <button type="submit" class="btn btn-primary">
+                <div class="flex justify-end">
+                    <button type="submit" class="btn btn-active">
                         Attach Indicators
                     </button>
                 </div>
@@ -38,7 +42,7 @@
     </div>
 </div>
 
-{{-- SweetAlert2 notification for all messages passed from the controller --}}
+<!-- SweetAlert2 Notification for messages passed from the controller -->
 @if (isset($message) && $message)
     <script>
         document.addEventListener('DOMContentLoaded', function() {

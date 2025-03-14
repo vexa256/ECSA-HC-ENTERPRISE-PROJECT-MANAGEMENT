@@ -1,117 +1,174 @@
-<div class="container-fluid p-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10">
-            <h1 class="display-4 text-center mb-5">Select a Cluster</h1>
-            <div class="row g-4">
+<div class="bg-gray-50 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-semibold text-gray-800 mb-4">Select a Cluster</h1>
+            <div class="flex justify-between items-center">
+                <div class="relative">
+                    <input type="text" id="cluster-search" placeholder="Search clusters"
+                        class="input input-bordered w-64 pl-10" />
+                    <i class="iconify absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        data-icon="mdi:magnify"></i>
+                </div>
+                <div class="btn-group">
+                    <button id="list-view-btn" class="btn btn-sm btn-active">
+                        <i class="iconify mr-2" data-icon="mdi:view-list"></i>List
+                    </button>
+                    <button id="grid-view-btn" class="btn btn-sm">
+                        <i class="iconify mr-2" data-icon="mdi:view-grid"></i>Grid
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <ul id="cluster-container" class="space-y-4">
                 @if (Auth::user()->AccountRole === 'Admin')
-                    <div class="col-12 col-md-6 col-xl-4">
-                        <div class="card card-stacked-hover h-100 bg-azure-lt cursor-pointer cluster-card"
-                            data-cluster="All clusters">
-                            <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
-                                <div class="avatar avatar-xl mb-3 bg-azure">
-                                    <i class="fas fa-globe fa-lg"></i>
-                                </div>
-                                <h3 class="card-title mb-2">All Clusters</h3>
-                                <p class="text-muted text-center">View comprehensive data across all clusters</p>
+                    <li class="cluster-item bg-white shadow-sm rounded-lg p-4" data-cluster="All clusters">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                                <i class="iconify w-6 h-6 text-blue-600" data-icon="mdi:earth"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h2 class="text-lg font-semibold text-gray-800">All Clusters</h2>
+                                <p class="text-sm text-gray-600">View comprehensive data across all clusters</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="badge badge-primary">Admin</span>
+                                <i class="iconify w-5 h-5 text-gray-400" data-icon="mdi:chevron-right"></i>
                             </div>
                         </div>
-                    </div>
+                    </li>
                 @endif
 
                 @foreach ($clusters as $cluster)
-                    <div class="col-12 col-md-6 col-xl-4">
-                        <div class="card card-stacked-hover h-100 cursor-pointer cluster-card"
-                            data-cluster="{{ $cluster->ClusterID }}">
-                            <div class="ribbon ribbon-top ribbon-start bg-primary">
-                                {{ $cluster->ClusterID }}
+                    <li class="cluster-item bg-white shadow-sm rounded-lg p-4" data-cluster="{{ $cluster->ClusterID }}">
+                        <div class="flex items-center">
+                            @php
+                                $colors = [
+                                    ['bg-green-100', 'text-green-600'],
+                                    ['bg-purple-100', 'text-purple-600'],
+                                    ['bg-orange-100', 'text-orange-600'],
+                                    ['bg-pink-100', 'text-pink-600'],
+                                    ['bg-indigo-100', 'text-indigo-600'],
+                                ];
+                                $colorPair = $colors[array_rand($colors)];
+
+                                $icons = ['mdi:chart-box', 'mdi:flask', 'mdi:heart-pulse', 'mdi:pill', 'mdi:dna'];
+                                $icon = $icons[array_rand($icons)];
+                            @endphp
+                            <div
+                                class="w-12 h-12 rounded-full {{ $colorPair[0] }} flex items-center justify-center mr-4">
+                                <i class="iconify w-6 h-6 {{ $colorPair[1] }}" data-icon="{{ $icon }}"></i>
                             </div>
-                            <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
-                                <div
-                                    class="avatar avatar-xl mb-3 bg-{{ ['blue', 'green', 'red', 'yellow', 'purple'][array_rand(['blue', 'green', 'red', 'yellow', 'purple'])] }}-lt">
-                                    <i
-                                        class="fas fa-{{ ['chart-line', 'microscope', 'heartbeat', 'pills', 'dna'][array_rand(['chart-line', 'microscope', 'heartbeat', 'pills', 'dna'])] }} fa-lg"></i>
-                                </div>
-                                <h3 class="card-title mb-2">{{ $cluster->Cluster_Name }}</h3>
-                                <p class="text-muted text-center">{{ Str::limit($cluster->Description, 100) }}</p>
+                            <div class="flex-1">
+                                <h2 class="text-lg font-semibold text-gray-800">{{ $cluster->Cluster_Name }}</h2>
+                                {{-- <p class="text-sm text-gray-600">{{ Str::limit($cluster->Description, 100) }}</p> --}}
                             </div>
-                            <div class="card-footer bg-transparent border-0">
-                                <div class="row align-items-center g-2">
-                                    <div class="col-auto ms-auto">
-                                        <div class="avatar-list avatar-list-stacked">
-                                            @for ($i = 0; $i < min(rand(2, 5), 5); $i++)
-                                                <span
-                                                    class="avatar avatar-xs rounded-circle bg-{{ ['blue', 'green', 'red', 'yellow', 'purple'][array_rand(['blue', 'green', 'red', 'yellow', 'purple'])] }}-lt">
-                                                    <i class="fas fa-user fa-xs"></i>
-                                                </span>
-                                            @endfor
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <span class="badge bg-blue-lt">
-                                            <i class="fas fa-users me-1"></i>
-                                            {{ rand(5, 20) }} members
-                                        </span>
-                                    </div>
-                                </div>
+                            <div class="flex items-center space-x-2">
+                                {{-- <span class="text-sm text-gray-500">ID: {{ $cluster->ClusterID }}</span> --}}
+                                <span class="badge badge-success gap-1">
+                                    <i class="iconify w-3 h-3" data-icon="mdi:check-circle"></i>
+                                    {{ rand(5, 20) }} active
+                                </span>
+                                <i class="iconify w-5 h-5 text-gray-400" data-icon="mdi:chevron-right"></i>
                             </div>
                         </div>
-                    </div>
+                    </li>
                 @endforeach
-            </div>
-        </div>
+            </ul>
+        </main>
     </div>
 </div>
 
-<form id="cluster-form" action="{{ route('select-year') }}" method="POST" class="d-none">
+<form id="cluster-form" action="{{ route('select-year') }}" method="POST" class="hidden">
     @csrf
     <input type="hidden" name="cluster" id="selected-cluster">
 </form>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const clusterCards = document.querySelectorAll('.cluster-card');
+        const clusterItems = document.querySelectorAll('.cluster-item');
         const clusterForm = document.getElementById('cluster-form');
         const selectedClusterInput = document.getElementById('selected-cluster');
+        const clusterSearch = document.getElementById('cluster-search');
+        const listViewBtn = document.getElementById('list-view-btn');
+        const gridViewBtn = document.getElementById('grid-view-btn');
+        const clusterContainer = document.getElementById('cluster-container');
 
-        clusterCards.forEach(card => {
-            card.addEventListener('click', function() {
+        clusterItems.forEach(item => {
+            item.addEventListener('click', function() {
                 const clusterId = this.dataset.cluster;
                 selectedClusterInput.value = clusterId;
-                clusterForm.submit();
-            });
 
-            card.addEventListener('mouseenter', function() {
-                this.classList.add('shadow-lg');
-                this.style.transform = 'translateY(-5px) scale(1.02)';
-            });
+                // Add selection animation
+                this.classList.add('ring-2', 'ring-blue-500');
+                this.querySelector('.iconify:last-child').classList.add('text-blue-500');
 
-            card.addEventListener('mouseleave', function() {
-                this.classList.remove('shadow-lg');
-                this.style.transform = 'translateY(0) scale(1)';
+                // Submit form after brief delay for animation
+                setTimeout(() => {
+                    clusterForm.submit();
+                }, 300);
             });
         });
+
+        // Implement search functionality
+        clusterSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            clusterItems.forEach(item => {
+                const clusterName = item.querySelector('h2').textContent.toLowerCase();
+                const clusterDescription = item.querySelector('p').textContent.toLowerCase();
+                if (clusterName.includes(searchTerm) || clusterDescription.includes(
+                        searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Implement view switching
+        listViewBtn.addEventListener('click', () => switchView('list'));
+        gridViewBtn.addEventListener('click', () => switchView('grid'));
+
+        function switchView(view) {
+            if (view === 'grid') {
+                clusterContainer.classList.remove('space-y-4');
+                clusterContainer.classList.add('grid', 'grid-cols-2', 'gap-4');
+                gridViewBtn.classList.add('btn-active');
+                listViewBtn.classList.remove('btn-active');
+            } else {
+                clusterContainer.classList.add('space-y-4');
+                clusterContainer.classList.remove('grid', 'grid-cols-2', 'gap-4');
+                listViewBtn.classList.add('btn-active');
+                gridViewBtn.classList.remove('btn-active');
+            }
+        }
     });
 </script>
 
 <style>
-    .card-stacked-hover {
-        transition: all 0.3s ease;
+    .cluster-item {
+        @apply transition-all duration-300 ease-in-out;
     }
 
-    .cursor-pointer {
-        cursor: pointer;
+    .cluster-item:hover {
+        @apply shadow-md;
     }
 
-    .cluster-card:hover .avatar {
-        transform: scale(1.1);
-        transition: transform 0.3s ease;
+    /* Grid view styles */
+    .grid .cluster-item>div {
+        @apply flex-col items-start;
     }
 
-    .avatar i {
-        opacity: 0.8;
+    .grid .cluster-item .w-12 {
+        @apply mb-4;
     }
 
-    .cluster-card:hover .avatar i {
-        opacity: 1;
+    .grid .cluster-item .flex-1 {
+        @apply mb-4 w-full;
+    }
+
+    .grid .cluster-item .flex.items-center.space-x-2 {
+        @apply w-full justify-between;
     }
 </style>

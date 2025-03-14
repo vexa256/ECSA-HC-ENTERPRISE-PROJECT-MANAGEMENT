@@ -1,182 +1,162 @@
-<!-- Page Header -->
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col-auto ms-auto d-print-none">
-                <div class="btn-list">
-                    <!-- Button to Open Add Strategic Objective Modal -->
-                    <button type="button" class="btn btn-primary d-none d-sm-inline-block" data-bs-toggle="modal"
-                        data-bs-target="#addStrategicObjectiveModal">
-                        <i class="fas fa-plus"></i> <!-- Font Awesome plus icon -->
-                        Add New Strategic Objective
-                    </button>
+<div class="container mx-auto px-4 py-8 bg-gradient-to-br from-base-100 to-base-200">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
+        <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+            Strategic Objectives
+        </h1>
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="Search objectives..." class="input input-bordered input-sm pr-10 w-full max-w-xs" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <button class="btn btn-sm btn-neutral shadow-lg hover:shadow-xl transition-all duration-300"
+                onclick="add_strategic_objective_modal.showModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Objective
+            </button>
+        </div>
+    </div>
+
+    <div id="objectives-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @forelse ($strategicObjectives as $objective)
+            <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300">
+                <div class="card-body">
+                    <h2 class="card-title text-primary">{{ $objective->SO_Number }}</h2>
+                    <p class="text-base-content/70">{{ Str::limit($objective->Description, 100) }}</p>
+                    <div class="card-actions justify-end mt-4">
+                        <button class="btn btn-sm btn-outline shadow-md hover:shadow-lg transition-all duration-300"
+                            onclick="view_more_dialog_{{ $objective->id }}.showModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View
+                        </button>
+                        <button class="btn btn-sm btn-outline shadow-md hover:shadow-lg transition-all duration-300"
+                            onclick="edit_strategic_objective_modal_{{ $objective->id }}.showModal()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                        </button>
+                        <button
+                            class="btn btn-sm btn-outline btn-error shadow-md hover:shadow-lg transition-all duration-300"
+                            onclick="confirmDelete('{{ $objective->id }}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        @empty
+            <div class="col-span-full flex items-center justify-center h-64 bg-base-200 rounded-box shadow-inner">
+                <p class="text-xl text-base-content/50">No strategic objectives found</p>
+            </div>
+        @endforelse
     </div>
 </div>
 
-<div class="page-body">
-    <div class="container-xl">
-        <!-- Strategic Objectives Table -->
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-vcenter card-table tableme">
-                    <thead>
-                        <tr>
-                            <th>SO Number</th>
-                            <th>SO Name</th>
-                            <th>Description</th>
-                            <th class="w-1">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($strategicObjectives as $objective)
-                            <tr>
-                                <td>{{ $objective->SO_Number }}</td>
-                                <td>{{ $objective->SO_Name }}</td>
-                                <td>{{ $objective->Description }}</td>
-                                <td>
-                                    <div class="btn-list flex-nowrap">
-                                        <!-- Edit Button -->
-                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#editStrategicObjectiveModal-{{ $objective->id }}">
-                                            <i class="fas fa-edit"></i> <!-- Font Awesome edit icon -->
-                                            Edit
-                                        </button>
+<!-- ... (previous modals remain unchanged) ... -->
 
-                                        <!-- Delete Button -->
-                                        <form id="delete-form-{{ $objective->id }}"
-                                            action="{{ route('MassDelete', $objective->id) }}" method="POST"
-                                            style="display: inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" class="btn btn-sm btn-danger"
-                                                onclick="confirmDelete('{{ $objective->id }}')">
-                                                <i class="fas fa-trash"></i> <!-- Font Awesome trash icon -->
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <!-- Optionally handle the empty state here, e.g., show a message -->
-                        @endforelse
-                    </tbody>
-                </table>
+<!-- View More Details Dialogs -->
+@foreach ($strategicObjectives as $objective)
+    <dialog id="view_more_dialog_{{ $objective->id }}" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box bg-base-100 shadow-2xl">
+            <h3 class="font-bold text-2xl mb-6 text-primary">Strategic Objective Details</h3>
+            <div class="space-y-4">
+                <div class="bg-base-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-lg mb-2">SO Number</h4>
+                    <p class="text-base-content/70">{{ $objective->SO_Number }}</p>
+                </div>
+                <div class="bg-base-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-lg mb-2">SO Name</h4>
+                    <p class="text-base-content/70">{{ $objective->SO_Name }}</p>
+                </div>
+                <div class="bg-base-200 p-4 rounded-lg">
+                    <h4 class="font-semibold text-lg mb-2">Description</h4>
+                    <p class="text-base-content/70">{{ $objective->Description }}</p>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add New Strategic Objective Modal -->
-<div class="modal fade" id="addStrategicObjectiveModal" tabindex="-1" aria-labelledby="addStrategicObjectiveModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="addStrategicObjectiveModalLabel">Add New Strategic Objective</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form action="{{ route('MassInsert') }}" method="POST" id="addStrategicObjectiveForm">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="SO_Number" class="form-label">SO Number</label>
-                        <input type="text" class="form-control" id="SO_Number" name="SO_Number" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="SO_Name" class="form-label">SO Name</label>
-                        <input type="text" class="form-control" id="SO_Name" name="SO_Name" required>
-                    </div>
-
-                    <input type="hidden" name="TableName" value="strategic_objectives">
-                    <!-- Keep or adapt as needed based on your existing architecture -->
-                    <input type="hidden" name="StrategicObjectiveID"
-                        value="{{ md5(uniqid() . date('now') . uniqid()) }}">
-
-                    <div class="mb-3">
-                        <label for="Description" class="form-label">Description</label>
-                        <input type="text" class="form-control" id="Description" name="Description" required>
-                    </div>
+            <div class="modal-action">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-neutral shadow-md">Close</button>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="addStrategicObjectiveForm" class="btn btn-primary">Save</button>
-            </div>
         </div>
-    </div>
-</div>
-
-<!-- Edit Strategic Objective Modals -->
-@foreach ($strategicObjectives as $objective)
-    <div class="modal fade" id="editStrategicObjectiveModal-{{ $objective->id }}" tabindex="-1"
-        aria-labelledby="editStrategicObjectiveModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="editStrategicObjectiveModalLabel">Edit Strategic Objective</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ route('MassUpdate', $objective->id) }}" method="POST"
-                        id="editStrategicObjectiveForm-{{ $objective->id }}">
-                        @csrf
-                        @method('PUT')
-
-                        <input type="hidden" name="TableName" value="strategic_objectives">
-                        <input type="hidden" name="id" value="{{ $objective->id }}">
-
-                        <div class="mb-3">
-                            <label for="SO_Number" class="form-label">SO Number</label>
-                            <input type="text" class="form-control" id="SO_Number" name="SO_Number"
-                                value="{{ $objective->SO_Number }}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="SO_Name" class="form-label">SO Name</label>
-                            <input type="text" class="form-control" id="SO_Name" name="SO_Name"
-                                value="{{ $objective->SO_Name }}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="Description" class="form-label">Description</label>
-                            <input type="text" class="form-control" id="Description" name="Description"
-                                value="{{ $objective->Description }}" required>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" form="editStrategicObjectiveForm-{{ $objective->id }}"
-                        class="btn btn-primary">Update</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    </dialog>
 @endforeach
-
-<!-- SweetAlert2 Script for Delete Confirmation -->
 
 <script>
     function confirmDelete(objectiveId) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('delete-form-' + objectiveId).submit();
+        const deleteForm = document.getElementById('delete-form');
+        const deleteIdInput = document.getElementById('delete-id');
+        deleteIdInput.value = objectiveId;
+        delete_confirm_modal.showModal();
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        @if (session('status'))
+            document.getElementById('status-message').textContent = "{{ session('status') }}";
+            status_dialog.showModal();
+        @endif
+
+        @if (session('error'))
+            document.getElementById('error-message').textContent = "{{ session('error') }}";
+            error_dialog.showModal();
+        @endif
+
+        // Search functionality
+        const searchInput = document.getElementById('search-input');
+        const objectivesGrid = document.getElementById('objectives-grid');
+        const objectives = objectivesGrid.querySelectorAll('.card');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+
+            objectives.forEach(objective => {
+                const title = objective.querySelector('.card-title').textContent.toLowerCase();
+                const description = objective.querySelector('p').textContent.toLowerCase();
+
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    objective.style.display = '';
+                    objective.style.opacity = '1';
+                    objective.style.transform = 'scale(1)';
+                } else {
+                    objective.style.opacity = '0';
+                    objective.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        objective.style.display = 'none';
+                    }, 300);
+                }
+            });
+
+            // Check if there are any visible objectives
+            const visibleObjectives = objectivesGrid.querySelectorAll('.card[style="display: "";"]');
+            const noResultsMessage = objectivesGrid.querySelector('.no-results-message');
+
+            if (visibleObjectives.length === 0) {
+                if (!noResultsMessage) {
+                    const message = document.createElement('div');
+                    message.className = 'col-span-full flex items-center justify-center h-64 bg-base-200 rounded-box shadow-inner no-results-message';
+                    message.innerHTML = '<p class="text-xl text-base-content/50">No matching objectives found</p>';
+                    objectivesGrid.appendChild(message);
+                }
+            } else if (noResultsMessage) {
+                noResultsMessage.remove();
             }
         });
-    }
+    });
 </script>

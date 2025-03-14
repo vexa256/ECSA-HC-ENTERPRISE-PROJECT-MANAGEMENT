@@ -1,120 +1,148 @@
-<!-- CSS files -->
-<link href="{{ asset('dist/css/tabler.min.css?1738096685') }}" rel="stylesheet" />
-<link href="{{ asset('dist/css/tabler-flags.min.css?1738096685') }}" rel="stylesheet" />
-<link href="{{ asset('dist/css/tabler-socials.min.css?1738096685') }}" rel="stylesheet" />
-<link href="{{ asset('dist/css/tabler-payments.min.css?1738096685') }}" rel="stylesheet" />
-<link href="{{ asset('dist/css/tabler-vendors.min.css?1738096685') }}" rel="stylesheet" />
-<link href="{{ asset('dist/css/tabler-marketing.min.css?1738096685') }}" rel="stylesheet" />
-<link href="{{ asset('dist/css/demo.min.css?1738096685') }}" rel="stylesheet" />
-<style>
-    @import url('https://rsms.me/inter/inter.css');
-</style>
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECSA-HC Reporting Dashboard</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> --}}
 
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/iconify/2.0.0/iconify.min.js"></script>
 
 
-
-<link
-    href="https://cdn.datatables.net/v/dt/jq-3.7.0/jszip-3.10.1/dt-2.2.1/b-3.2.1/b-colvis-3.2.1/b-html5-3.2.1/b-print-3.2.1/r-3.0.3/datatables.min.css"
-    rel="stylesheet">
-<script src="{{ asset('dist/libs/tom-select/dist/js/tom-select.base.min.js?1738096684') }}" defer></script>
+    {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
 
 
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <style>
+        /* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'); */
 
-<script src="
-https://cdn.jsdelivr.net/npm/sweetalert2@11.16.0/dist/sweetalert2.all.min.js
-"></script>
-<link href="
-https://cdn.jsdelivr.net/npm/sweetalert2@11.16.0/dist/sweetalert2.min.css
-" rel="stylesheet">
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-<style>
-    .animated-background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: linear-gradient(45deg, #f3f3f3, #e9ecef);
-        background-size: 400% 400%;
-        animation: gradientBG 15s ease infinite;
-    }
-
-    @keyframes gradientBG {
-        0% {
-            background-position: 0% 50%;
+        body {
+            font-family: 'Inter', sans-serif;
         }
 
-        50% {
-            background-position: 100% 50%;
+        /* Enhanced Slide-out Panel Styles */
+        .slide-panel {
+            position: fixed;
+            top: 0;
+            left: 4rem;
+            height: 100vh;
+            width: 0;
+            background: white;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
         }
 
-        100% {
-            background-position: 0% 50%;
+        .slide-panel.open {
+            width: 400px;
         }
-    }
 
-    .form-floating-custom {
-        position: relative;
-    }
+        .slide-panel-content {
+            width: 400px;
+            height: 100%;
+            padding: 2rem;
+            overflow-y: auto;
+        }
 
-    .form-floating-icon {
-        position: absolute;
-        top: 50%;
-        right: 10px;
-        transform: translateY(-50%);
-        color: #6c757d;
-    }
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
 
-    .btn-pill {
-        border-radius: 50px;
-    }
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #f3f4f6;
+            transition: all 0.2s ease;
+        }
 
-    .report-selection-form {
-        transition: all 0.3s ease;
-    }
+        .shortcut-item:hover {
+            background-color: #e5e7eb;
+        }
 
-    .report-selection-form:hover {
-        transform: translateY(-5px);
-    }
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
 
-    .card {
-        transition: all 0.3s ease;
-    }
+        .link-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease;
+        }
 
-    .card:hover {
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, .175) !important;
-    }
-</style>
-<style>
-    .dt-info {
+        .link-item:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
 
-        display: none !important;
-    }
 
-    .ts-wrapper {
+    <style>
+        /* Targeting the scrollbar for WebKit browsers (Chrome, Safari, newer versions of Edge) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            /* for vertical scrollbars */
+            height: 8px;
+            /* for horizontal scrollbars */
+        }
 
-        z-index: 100000 !important;
-    }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
 
-    .ts-dropdown {
-        z-index: 9999 !important;
-    }
-</style>
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        /* For Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+        }
+
+        /* For Internet Explorer */
+        body {
+            -ms-overflow-style: -ms-autohiding-scrollbar;
+        }
+
+        /* Optional: Hide scrollbar when not scrolling (iOS-like behavior) */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        *:hover::-webkit-scrollbar {
+            display: block;
+        }
+
+        /* Ensure the page itself is scrollable */
+        html,
+        body {
+            overflow-y: auto;
+        }
+    </style>
+
+
 
 </head>
 
-<body class=" layout-fluid">
-
-    <script src="{{ asset('dist/js/demo-theme.min.js?1738096685') }}"></script>
+<body>

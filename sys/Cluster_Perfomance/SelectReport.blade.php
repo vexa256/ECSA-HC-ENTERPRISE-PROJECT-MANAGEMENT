@@ -1,61 +1,76 @@
-<div class="container-xl">
-    <div class="page-header d-print-none">
-        <div class="row align-items-center">
-            <div class="col">
-                <h2 class="page-title">
+<div class="container mx-auto px-4">
+    <!-- Page Header -->
+    <div class="py-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h2 class="text-2xl font-bold">
                     Select Performance Report
                 </h2>
-                <div class="text-muted mt-1">Choose a report for {{ $selectedYear }} to view cluster performance
+                <div class="text-gray-500 mt-1">Choose a report for {{ $selectedYear }} to view cluster performance
                     breakdown</div>
             </div>
-            <div class="col-auto ms-auto d-print-none">
-                <div class="btn-list">
-                    <a href="{{ route('Ecsa_CP_selectYear') }}" class="btn btn-outline-primary d-none d-sm-inline-block">
-                        <i class="fa fa-arrow-left me-2"></i>
-                        Back to Year Selection
-                    </a>
-                </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{{ route('Ecsa_CP_selectYear') }}" class="btn btn-outline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-arrow-left">
+                        <path d="m12 19-7-7 7-7" />
+                        <path d="M19 12H5" />
+                    </svg>
+                    Back to Year Selection
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="row row-cards">
-            <div class="col-md-8 col-lg-6 mx-auto">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Available Reports for {{ $selectedYear }}</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            @if ($reports->isEmpty())
-                                <div class="alert alert-info" role="alert">
-                                    <i class="fa fa-info-circle me-2"></i>
-                                    No reports available for the selected year.
-                                </div>
-                            @else
-                                @foreach ($reports as $report)
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="radio" name="report"
-                                            id="report{{ $report->id }}" value="{{ $report->ReportingID }}">
-                                        <label class="form-check-label" for="report{{ $report->id }}">
-                                            {{ $report->ReportName }}
-                                            <span class="text-muted d-block small">
+    <!-- Page Body -->
+    <div class="py-4">
+        <div class="max-w-md mx-auto">
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title">Available Reports for {{ $selectedYear }}</h3>
+
+                    <div class="py-4">
+                        @if ($reports->isEmpty())
+                            <div class="alert alert-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-info">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 16v-4" />
+                                    <path d="M12 8h.01" />
+                                </svg>
+                                No reports available for the selected year.
+                            </div>
+                        @else
+                            @foreach ($reports as $report)
+                                <div class="form-control mb-3">
+                                    <label class="label cursor-pointer justify-start gap-3">
+                                        <input type="radio" name="report" id="report{{ $report->id }}"
+                                            value="{{ $report->ReportingID }}" class="radio radio-primary" />
+                                        <div>
+                                            <span class="label-text font-medium">{{ $report->ReportName }}</span>
+                                            <span class="label-text text-gray-500 block text-sm">
                                                 Closing Date:
                                                 {{ \Carbon\Carbon::parse($report->ClosingDate)->format('d M Y') }}
                                             </span>
-                                        </label>
-                                    </div>
-                                @endforeach
-                            @endif
-                        </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            @endforeach
+                        @endif
                     </div>
-                    <div class="card-footer text-end">
+
+                    <div class="card-actions justify-end mt-4">
                         <button type="button" class="btn btn-primary" id="viewReportBtn" disabled>
                             View Report
-                            <i class="fa fa-chart-bar ms-2"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="lucide lucide-bar-chart-2">
+                                <path d="M18 20V10" />
+                                <path d="M12 20V4" />
+                                <path d="M6 20v-6" />
+                            </svg>
                         </button>
                     </div>
                 </div>

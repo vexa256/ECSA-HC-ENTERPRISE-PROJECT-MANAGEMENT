@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('h_r_form_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('form_name');             // e.g. "360 Non-Supervisor", "Performance Appraisal"
+            $table->text('description')->nullable(); // optional, for explaining the form usage
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('h_r_form_types');
+    }
+};

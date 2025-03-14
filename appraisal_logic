@@ -1,0 +1,356 @@
+for controller in \
+  Appraisal_PositionsController \
+  Appraisal_FormTypesController \
+  Appraisal_PerformanceFactorsController \
+  Appraisal_RatingScalesController \
+  Appraisal_AppraisalCyclesController \
+  Appraisal_BulkConfigController \
+  Appraisal_CycleInitiationController \
+  Appraisal_AppraisalGenerationController \
+  Appraisal_ReviewerDashboardController \
+  Appraisal_AppraisalFormController \
+  Appraisal_FeedbackController \
+  Appraisal_AppraisalSubmissionController \
+  Appraisal_SignoffsController \
+  Appraisal_FinalizationController \
+  Appraisal_DevelopmentPlansController \
+  Appraisal_PerformancePlansController \
+  Appraisal_ReportsController \
+  Appraisal_BulkOperationsController \
+  Appraisal_NotificationsController; do
+    php artisan make:controller $controller
+done
+
+
+
+1. Initial Setup & Configuration
+Purpose:
+Establish the foundational data for the appraisal system. These controllers are responsible for CRUD operations on the core lookup tables and configuration data. They must enforce proper validation, integrate with role‐based permissions, and set up relationships for later modules.
+
+a. Appraisal_PositionsController
+Responsibilities:
+Manage job roles in the h_r__positions table.
+CRUD operations: list, create, update, and delete positions.
+Link positions to users via the HR_position_id, and manage the is_supervisory flag to influence workflow decisions.
+Key Methods:
+index(): List all positions.
+create() & store(): Display form and save new position.
+edit() & update(): Modify an existing position.
+destroy(): Delete a position.
+View: positions.blade.php
+Integration:
+Apply middleware for admin-level access.
+Validate data and enforce foreign key integrity.
+b. Appraisal_FormTypesController
+Responsibilities:
+Manage appraisal form templates stored in h_r_form_types.
+CRUD operations for form types.
+Key Methods:
+index(), create(), store(), edit(), update(), destroy().
+View: form_types.blade.php
+Integration:
+Provide form type selections for appraisal generation.
+Ensure data consistency with appraisal headers.
+c. Appraisal_PerformanceFactorsController
+Responsibilities:
+Manage evaluation criteria in h_r_performance_factors.
+Distinguish between regular and supervisory factors (using is_supervisory_factor).
+Key Methods:
+Standard CRUD: index(), create(), store(), edit(), update(), destroy().
+View: performance_factors.blade.php
+Integration:
+Supply performance factors to appraisal items.
+Impact the appraisal form view by filtering based on role.
+d. Appraisal_RatingScalesController
+Responsibilities:
+Manage rating scale options in h_r_rating_scales.
+CRUD operations ensuring that changes in scale options cascade to appraisal items.
+Key Methods:
+index(), create(), store(), edit(), update(), destroy().
+View: rating_scales.blade.php
+Integration:
+Connect with the appraisal form for capturing ratings.
+Validate consistency in scale codes and values.
+e. Appraisal_AppraisalCyclesController
+Responsibilities:
+Manage appraisal cycles in h_r_appraisal_cycles.
+Handle creation, scheduling, and status updates of appraisal cycles.
+Key Methods:
+index(), create(), store(), edit(), update(), destroy().
+View: appraisal_cycles.blade.php
+Integration:
+Enforce date validations (start and end dates).
+Serve as the basis for linking multiple appraisal records.
+f. Appraisal_BulkConfigController
+Responsibilities:
+Provide mass insert, update, and delete operations across configuration tables.
+Enhance administrative efficiency via batch processing.
+Key Methods:
+index(), import(), export(), bulkUpdate(), bulkDelete().
+View: bulk_config.blade.php
+Integration:
+Utilize file parsing (e.g., CSV/Excel) and database transactions.
+Limit access to system administrators.
+2. Launching an Appraisal Cycle
+Purpose:
+Enable HR to initiate a cycle and automatically generate appraisal records based on the chosen configuration.
+
+a. Appraisal_CycleInitiationController
+Responsibilities:
+Allow HR to open an appraisal cycle by updating its status to “Open.”
+Key Methods:
+index(): List available cycles.
+initiateCycle(): Trigger status change with validations.
+updateStatus(): Persist the “Open” status.
+View: cycle_initiation.blade.php
+Integration:
+Validate that the cycle is ready to be opened.
+Log initiation actions and potentially trigger notifications.
+b. Appraisal_AppraisalGenerationController
+Responsibilities:
+Generate appraisal header records in h_r_appraisals based on the selected form type.
+For 360 reviews, create multiple records and populate the h_r_appraisal_reviewers many-to-many relation.
+Key Methods:
+index(): Show generation options.
+generateAppraisals(): Create header records based on HR input.
+handle360Reviews(): Loop through and assign multiple reviewers.
+View: appraisal_generation.blade.php
+Integration:
+Ensure each appraisal record includes proper foreign keys linking to cycles and form types.
+Utilize transactions to ensure integrity.
+Optionally trigger notifications (see below).
+c. Appraisal_NotificationsController
+Responsibilities (Part 1):
+Dispatch email or in-app notifications upon cycle initiation and appraisal generation.
+Key Methods:
+sendNotification(): Send immediate notifications.
+scheduleReminders(): Set up queued jobs for later.
+View (if applicable): notifications.blade.php
+Integration:
+Leverage Laravel’s Notification system.
+Can be reused in later modules for automated reminders.
+3. Appraisal Execution
+Purpose:
+Enable reviewers to interact with their assigned appraisals by entering ratings, comments, and feedback.
+
+a. Appraisal_ReviewerDashboardController
+Responsibilities:
+Display a list of appraisal records assigned to the logged-in reviewer.
+Key Methods:
+index(): Retrieve and display assigned appraisals.
+showAppraisalDetail(): Provide detailed view of a selected appraisal.
+filterAppraisals(): Allow filtering by status, cycle, etc.
+View: assigned_appraisals.blade.php
+Integration:
+Query the h_r_appraisals and h_r_appraisal_reviewers tables based on the authenticated user.
+Apply role-based filters to ensure only appropriate data is shown.
+b. Appraisal_AppraisalFormController
+Responsibilities:
+Render the appraisal form for data entry, showing performance factors and rating scales.
+Allow reviewers to enter ratings and comments.
+Key Methods:
+showForm(): Retrieve and display appraisal details along with related performance factors and scales.
+storeRating(): Save new ratings and comments.
+updateRating(): Edit previously entered data.
+validateSubmission(): Ensure all required fields are completed.
+View: appraisal_form.blade.php
+Integration:
+Dynamically load factors from h_r_performance_factors and scales from h_r_rating_scales.
+Support self-assessments where applicable.
+c. Appraisal_FeedbackController
+Responsibilities:
+Handle 360-degree feedback submissions with dual versions: non-supervisor and supervisor.
+Key Methods:
+showFeedbackForm(): Decide which view to load based on the reviewer’s role.
+storeFeedback(): Save peer or supervisory feedback.
+updateFeedback(): Modify existing feedback entries.
+Views:
+Non-supervisor: non_supervisor_feedback.blade.php
+Supervisor: supervisor_feedback.blade.php
+Integration:
+Determine the appropriate form version based on user permissions or the is_supervisory flag.
+Link feedback entries directly to the appropriate appraisal record.
+4. Approval, Sign-off, and Finalization
+Purpose:
+Manage the workflow for submitting, signing off, and finalizing appraisals, ensuring data integrity and auditability.
+
+a. Appraisal_AppraisalSubmissionController
+Responsibilities:
+Transition an appraisal from “Draft” to “Submitted” status once completed.
+Key Methods:
+submitAppraisal(): Change the status with validation.
+validateSubmission(): Check that all necessary data is present before submission.
+View: appraisal_submission.blade.php
+Integration:
+Must interact with the reviewer’s form data and trigger subsequent sign-off steps.
+Ensure consistency by using database transactions.
+b. Appraisal_SignoffsController
+Responsibilities:
+Record and manage the sign-off process by various roles (reviewer, employee, HR) into h_r_signoffs.
+Key Methods:
+index(): List sign-offs associated with an appraisal.
+captureSignoff(): Record a new sign-off event.
+listSignoffs(): Provide an audit trail for review.
+View: signoffs.blade.php
+Integration:
+Validate role permissions for each sign-off.
+Log sign-off times and the signing user’s details.
+c. Appraisal_FinalizationController
+Responsibilities:
+Finalize an appraisal after all sign-offs are completed, making the record read-only.
+Key Methods:
+finalizeAppraisal(): Verify all prerequisites and update the status to “Finalized.”
+verifySignoffs(): Confirm that required sign-offs are complete.
+updateStatus(): Persist the final status.
+View: appraisal_finalization.blade.php
+Integration:
+Ensure that once finalized, no further edits are permitted.
+Trigger any archival or audit logging processes.
+d. Appraisal_NotificationsController (Part 2)
+Responsibilities (Continued):
+Send automated reminders for pending appraisals or sign-offs.
+Key Methods:
+scheduleReminder(): Queue reminder notifications.
+sendEscalationNotifications(): Escalate overdue tasks.
+View: Optionally reuse notifications.blade.php for manual triggers.
+Integration:
+Integrate with Laravel’s job queues and scheduled tasks.
+Provide feedback to HR and reviewers regarding pending actions.
+5. Post-Appraisal Planning
+Purpose:
+Facilitate follow-up planning by capturing development objectives and next-cycle performance goals.
+
+a. Appraisal_DevelopmentPlansController
+Responsibilities:
+Manage development objectives linked to appraisals in h_r_development_plans.
+Key Methods:
+index(): List all development plans for a given appraisal.
+create() & store(): Add new development objectives.
+edit() & update(): Modify existing plans.
+destroy(): Remove obsolete plans.
+View: development_plans.blade.php
+Integration:
+Enforce linkage via appraisal_id.
+Validate inputs to support measurable objectives.
+b. Appraisal_PerformancePlansController
+Responsibilities:
+Record and update performance plans and accountability areas for the next cycle in h_r_performance_plans.
+Key Methods:
+Standard CRUD methods: index(), create(), store(), edit(), update(), destroy().
+View: performance_plans.blade.php
+Integration:
+Ensure the plan is tied to the current appraisal for seamless transition to the next cycle.
+Validate that accountability areas and success measures are clearly defined.
+6. Reporting and Analytics
+Purpose:
+Provide comprehensive dashboards and reporting tools to track performance trends, audit finalized appraisals, and export data for further analysis.
+
+Appraisal_ReportsController
+Responsibilities:
+Generate aggregated data dashboards with charts and tables.
+Allow exporting of reports to PDF/Excel.
+Key Methods:
+index(): Display the dashboard with key metrics.
+filterReports(): Enable filtering by cycle, department, etc.
+exportReport(): Provide export functionality.
+View: reports_dashboard.blade.php
+Integration:
+Query multiple tables (appraisals, appraisal_items, cycles) using optimized queries (with eager loading and indexing).
+Integrate charting libraries and export libraries as needed.
+7. System Maintenance and Continuous Improvement
+Purpose:
+Enable system-wide bulk operations, robust access control, and automated notifications to ensure smooth maintenance and scalability.
+
+Appraisal_BulkOperationsController
+Responsibilities:
+Perform mass CRUD operations on appraisal-related tables.
+Facilitate data import/export for large data sets.
+Key Methods:
+index(): Overview of bulk operations available.
+bulkInsert(), bulkUpdate(), bulkDelete(): Methods to handle large datasets.
+importData(), exportData(): For file-based operations.
+View: bulk_operations.blade.php
+Integration:
+Restrict access to high-privilege (admin) users.
+Use database transactions and batch processing for data integrity.
+(Re)Use of Appraisal_NotificationsController
+Extended Responsibilities:
+Beyond immediate notification dispatch, this controller also manages scheduled tasks and escalation logic.
+Integration:
+Coordinate with Laravel’s scheduler and queue workers to automate system notifications and escalations.
+Overall Integration & Cross-Cutting Concerns
+Authentication & Authorization:
+Every controller must integrate with Laravel’s built-in authentication. Apply role-based middleware to restrict access—ensuring that:
+
+Employees view only their own records.
+Supervisors access direct reports.
+HR administrators have full access.
+Validation & Error Handling:
+Utilize Laravel Form Requests for robust validation. Centralize error handling to ensure consistent user feedback.
+
+Database Transactions & Integrity:
+Wrap critical operations (e.g., appraisal generation, bulk operations) in transactions. Ensure foreign key constraints and proper indexing (especially on columns like user_id, cycle_id, and status).
+
+Event Dispatching & Logging:
+Use Laravel events to decouple actions (like triggering notifications after submission). Log all significant changes (especially sign-offs and finalizations) to support audit requirements.
+
+User Interface & UX:
+Each Blade view should follow enterprise design standards: responsive, accessible, and intuitive. Consistency across modules is key for usability.
+
+Performance & Scalability:
+Optimize queries with eager loading and proper indexing. Prepare for large datasets in reporting and bulk operations by using efficient batch processes.
+
+Order of Implementation
+Initial Setup & Configuration
+Code the foundational controllers and their views in the following order:
+
+Appraisal_PositionsController → positions.blade.php
+Appraisal_FormTypesController → form_types.blade.php
+Appraisal_PerformanceFactorsController → performance_factors.blade.php
+Appraisal_RatingScalesController → rating_scales.blade.php
+Appraisal_AppraisalCyclesController → appraisal_cycles.blade.php
+Appraisal_BulkConfigController → bulk_config.blade.php
+Testing: Validate CRUD operations and relationship integrity.
+Launching an Appraisal Cycle
+Develop the controllers that manage cycle initiation and appraisal record generation:
+
+Appraisal_CycleInitiationController → cycle_initiation.blade.php
+Appraisal_AppraisalGenerationController → appraisal_generation.blade.php
+Integrate the notification logic using Appraisal_NotificationsController.
+Testing: Verify cycle status transitions, appraisal record creation, and notification dispatch.
+Appraisal Execution
+Build the interactive modules for reviewers:
+
+Appraisal_ReviewerDashboardController → assigned_appraisals.blade.php
+Appraisal_AppraisalFormController → appraisal_form.blade.php
+Appraisal_FeedbackController → non_supervisor_feedback.blade.php & supervisor_feedback.blade.php
+Testing: Ensure reviewers see only their assignments and that data entry flows are robust.
+Approval, Sign-off, and Finalization
+Code the workflow controllers:
+
+Appraisal_AppraisalSubmissionController → appraisal_submission.blade.php
+Appraisal_SignoffsController → signoffs.blade.php
+Appraisal_FinalizationController → appraisal_finalization.blade.php
+Reuse/enhance Appraisal_NotificationsController for reminders.
+Testing: Confirm that sign-offs and finalization prevent further modifications and maintain audit logs.
+Post-Appraisal Planning
+Develop planning modules:
+
+Appraisal_DevelopmentPlansController → development_plans.blade.php
+Appraisal_PerformancePlansController → performance_plans.blade.php
+Testing: Ensure that plans correctly link to appraisals and capture measurable objectives.
+Reporting and Analytics
+Build the reporting dashboard:
+
+Appraisal_ReportsController → reports_dashboard.blade.php
+Testing: Validate aggregated data accuracy, chart rendering, and export functionalities.
+System Maintenance and Continuous Improvement
+Finalize with maintenance utilities:
+
+Appraisal_BulkOperationsController → bulk_operations.blade.php
+Review and extend Appraisal_NotificationsController for scheduled tasks.
+Testing: Execute bulk operations in a controlled environment to ensure performance and data integrity.
+Conclusion
+This detailed plan maps every controller—from configuration to reporting—into a cohesive, modular system. Each controller is designed to be self-contained yet fully integrated with the overall HR/Laravel system. By following this order and addressing cross-cutting concerns like authentication, validation, transactions, and logging, we achieve an enterprise-grade, scalable, and robust performance appraisal system.
+
+This plan is ready for implementation, ensuring that every piece of code will be developed to the highest industry standards.

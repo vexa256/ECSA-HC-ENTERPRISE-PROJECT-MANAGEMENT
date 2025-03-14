@@ -1,140 +1,178 @@
-<div class="page-body">
-    <div class="container-xl">
-        <!-- Timelines Table -->
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-vcenter card-table">
-                    <thead>
-                        <tr>
-                            {{-- <th>ID</th> --}}
-                            <th>Report Name</th>
-                            <th>Type</th>
-                            <th>Year</th>
-                            <th>Status</th>
-                            <th>Last Bi-Annual</th>
-                            <th class="w-1">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($timelines as $timeline)
-                            <tr>
-                                {{-- <td>{{ $timeline->id }}</td> --}}
-                                <td>{{ $timeline->ReportName }}</td>
-                                <td>{{ $timeline->Type }}</td>
-                                <td>{{ $timeline->Year }}</td>
-                                <td>
-                                    <span
-                                        class="badge text-light bg-{{ $timeline->status == 'Completed' ? 'success' : ($timeline->status == 'In Progress' ? 'warning' : 'danger') }}">
-                                        {{ $timeline->status }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if ($timeline->Type == 'Bi-Annual')
-                                        {{ $timeline->LastBiAnnual ? 'Yes' : 'No' }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="btn-list flex-nowrap">
-                                        <!-- Edit Button -->
-                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#editTimelineModal-{{ $timeline->id }}">
-                                            <i class="fas fa-edit"></i> <!-- Font Awesome edit icon -->
-                                            Edit
-                                        </button>
+<div class="bg-gray-100 p-4">
+    <div class="container mx-auto">
+        <h4 class="text-xl font-semibold text-center my-6 text-gray-800">MPA Reporting Timelines Status Managment</h4>
+        <div class="mb-4 text-center">
+            <input type="text" id="searchInput" placeholder="Search timelines..."
+                class="input input-bordered w-full max-w-xs bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
 
 
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            {{-- <tr>
-                                <td colspan="7" class="text-center">No timelines found.</td>
-                            </tr> --}}
-                        @endforelse
-                    </tbody>
-                </table>
+
+        <div id="timelineGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            @foreach ($timelines as $timeline)
+                <div class="bg-white rounded-lg shadow-md p-4 timeline-card">
+                    <h2 class="text-lg font-semibold mb-2 text-gray-800">{{ $timeline->ReportName }}</h2>
+                    <p class="text-sm text-gray-600">Type: {{ $timeline->Type }}</p>
+                    <p class="text-sm text-gray-600">Year: {{ $timeline->Year }}</p>
+                    <div class="mt-2">
+                        <span
+                            class="px-2 py-1 text-xs font-semibold rounded-full
+                            {{ $timeline->status == 'Completed'
+                                ? 'bg-green-100 text-green-800'
+                                : ($timeline->status == 'In Progress'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800') }}">
+                            {{ $timeline->status }}
+                        </span>
+                    </div>
+                    @if ($timeline->Type == 'Bi-Annual')
+                        <p class="text-sm text-gray-600 mt-2">Last Bi-Annual:
+                            {{ $timeline->LastBiAnnual ? 'Yes' : 'No' }}</p>
+                    @endif
+                    <div class="mt-4 text-right">
+                        <label for="edit-modal-{{ $timeline->id }}"
+                            class="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white">Edit</label>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-6 flex justify-center">
+            <div class="btn-group" id="pagination">
+                <!-- Pagination buttons will be dynamically inserted here -->
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Timeline Modals -->
 @foreach ($timelines as $timeline)
-    <div class="modal fade" id="editTimelineModal-{{ $timeline->id }}" tabindex="-1"
-        aria-labelledby="editTimelineModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="editTimelineModalLabel">Edit MPA Reporting Timeline Status :
-                        {{ $timeline->ReportName }}</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+    <input type="checkbox" id="edit-modal-{{ $timeline->id }}" class="modal-toggle" />
+    <div class="modal">
+        <div class="modal-box bg-white rounded-lg shadow-lg">
+            <h3 class="font-semibold text-xl mb-4 text-gray-800">
+                Edit MPA Reporting Timeline Status: {{ $timeline->ReportName }}
+            </h3>
+            <form action="{{ route('MassUpdate', $timeline->id) }}" method="POST"
+                id="editTimelineForm-{{ $timeline->id }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="TableName" value="mpa_timelines">
+                <input type="hidden" name="id" value="{{ $timeline->id }}">
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="status-{{ $timeline->id }}">
+                        Status
+                    </label>
+                    <select
+                        class="select select-bordered w-full bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="status-{{ $timeline->id }}" name="status" required>
+                        <option value="Pending" {{ $timeline->status == 'Pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="In Progress" {{ $timeline->status == 'In Progress' ? 'selected' : '' }}>In
+                            Progress</option>
+                        <option value="Completed" {{ $timeline->status == 'Completed' ? 'selected' : '' }}>Completed
+                        </option>
+                    </select>
                 </div>
-                <div class="modal-body">
-                    <form action="{{ route('MassUpdate', $timeline->id) }}" method="POST"
-                        id="editTimelineForm-{{ $timeline->id }}">
-                        @csrf
-                        @method('PUT')
-                        {{-- <div class="mb-3"> --}}
-                        <input type="hidden" name="TableName" value="mpa_timelines">
 
-                        <input type="hidden" name="id" value="{{ $timeline->id }}">
-
-                        {{-- </div> --}}
-
-
-
-                        <div class="mb-3">
-                            <label for="status-{{ $timeline->id }}" class="form-label">Status</label>
-                            <select class="form-control" id="status-{{ $timeline->id }}" name="status" required>
-                                <option value="Pending" {{ $timeline->status == 'Pending' ? 'selected' : '' }}>Pending
-                                </option>
-                                <option value="In Progress" {{ $timeline->status == 'In Progress' ? 'selected' : '' }}>
-                                    In Progress</option>
-                                <option value="Completed" {{ $timeline->status == 'Completed' ? 'selected' : '' }}>
-                                    Completed</option>
-                            </select>
-                        </div>
-
-                    </form>
+                <div class="flex justify-end mt-6">
+                    <label for="edit-modal-{{ $timeline->id }}"
+                        class="btn btn-sm bg-gray-200 hover:bg-gray-300 text-gray-800 mr-2">Cancel</label>
+                    <button type="submit" class="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white">Update</button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" form="editTimelineForm-{{ $timeline->id }}"
-                        class="btn btn-primary">Update</button>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 @endforeach
 
-<!-- SweetAlert2 Script for Delete Confirmation -->
+@if (session('status'))
+    <div id="success-alert"
+        class="alert alert-success fixed bottom-5 right-5 w-96 z-50 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow-md">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                    fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium">{{ session('status') }}</p>
+            </div>
+        </div>
+    </div>
+@endif
 
-<script>
-    function confirmDelete(timelineId) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('delete-form-' + timelineId).submit();
-            }
-        });
-    }
-</script>
+@if (session('error'))
+    <div id="error-alert"
+        class="alert alert-error fixed bottom-5 right-5 w-96 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                    fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium">{{ session('error') }}</p>
+            </div>
+        </div>
+    </div>
+@endif
 
-<!-- Script to toggle the display of Last Bi-Annual based on Type selection -->
+```
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const itemsPerPage = 20;
+        let currentPage = 1;
+        const timelineCards = document.querySelectorAll('.timeline-card');
+        const totalPages = Math.ceil(timelineCards.length / itemsPerPage);
+
+        function showPage(page) {
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+
+            timelineCards.forEach((card, index) => {
+                card.style.display = (index >= start && index < end) ? '' : 'none';
+            });
+        }
+
+        function setupPagination() {
+            const paginationElement = document.getElementById('pagination');
+            paginationElement.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.innerText = i;
+                button.classList.add('btn', 'btn-sm');
+                if (i === currentPage) {
+                    button.classList.add('btn-active');
+                }
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    showPage(currentPage);
+                    setupPagination();
+                });
+                paginationElement.appendChild(button);
+            }
+        }
+
+        showPage(currentPage);
+        setupPagination();
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            timelineCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
         document.querySelectorAll('.type-select').forEach(function(selectElem) {
-            // Find the nearest form and the associated last-biannual wrapper inside it.
             var form = selectElem.closest('form');
             if (!form) return;
             var wrapper = form.querySelector('.last-biannual-wrapper');
@@ -145,17 +183,27 @@
                     wrapper.style.display = 'block';
                 } else {
                     wrapper.style.display = 'none';
-                    // Optionally, uncheck the checkbox when hiding
                     var checkbox = wrapper.querySelector('input[type="checkbox"]');
                     if (checkbox) checkbox.checked = false;
                 }
             }
 
-            // Initialize on page load
             toggleWrapper();
-
-            // Attach change event
             selectElem.addEventListener('change', toggleWrapper);
         });
+
+        // Auto-hide alerts after 3 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.style.display = 'none';
+            });
+        }, 3000);
     });
+
+    function confirmDelete(timelineId) {
+        if (confirm("Are you sure you want to delete this timeline?")) {
+            document.getElementById('delete-form-' + timelineId).submit();
+        }
+    }
 </script>

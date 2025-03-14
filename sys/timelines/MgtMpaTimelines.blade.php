@@ -1,285 +1,342 @@
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col-auto ms-auto d-print-none">
-                <div class="btn-list">
-                    <!-- Button to Open Add Timeline Modal -->
-                    <button type="button" class="btn btn-primary d-none d-sm-inline-block" data-bs-toggle="modal"
-                        data-bs-target="#addTimelineModal">
-                        <i class="fas fa-plus"></i> <!-- Font Awesome plus icon -->
-                        Add New MPA Timeline
-                    </button>
-                </div>
-            </div>
-        </div>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">MPA Timelines</h1>
+        <button class="btn btn-active" onclick="add_timeline_modal.showModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            Add Timeline
+        </button>
     </div>
-</div>
 
-<div class="page-body">
-    <div class="container-xl">
-        <!-- Timelines Table -->
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-vcenter card-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Report Name</th>
-                            <th>Type</th>
-                            <th>Year</th>
-                            <th>Status</th>
-                            <th>Last Bi-Annual</th>
-                            <th class="w-1">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($timelines as $timeline)
-                            <tr>
-                                <td>{{ $timeline->id }}</td>
-                                <td>{{ $timeline->ReportName }}</td>
-                                <td>{{ $timeline->Type }}</td>
-                                <td>{{ $timeline->Year }}</td>
-                                <td>
-                                    <span
-                                        class="badge text-light bg-{{ $timeline->status == 'Completed' ? 'success' : ($timeline->status == 'In Progress' ? 'warning' : 'danger') }}">
-                                        {{ $timeline->status }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if ($timeline->Type == 'Bi-Annual')
-                                        {{ $timeline->LastBiAnnual ? 'Yes' : 'No' }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="btn-list flex-nowrap">
-                                        <!-- Edit Button -->
-                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#editTimelineModal-{{ $timeline->id }}">
-                                            <i class="fas fa-edit"></i> <!-- Font Awesome edit icon -->
-                                            Edit
-                                        </button>
+    <div class="mb-4">
+        <input type="text" id="search-input" placeholder="Search timelines..."
+            class="input input-bordered w-full max-w-xs" />
+    </div>
 
-                                        <!-- Delete Button -->
-                                        <form id="delete-form-{{ $timeline->id }}"
-                                            action="{{ route('MassDelete', $timeline->id) }}" method="POST"
-                                            style="display: inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <input type="hidden" name="TableName" value="mpa_timelines">
-                                            <input type="hidden" name="id" value="{{ $timeline->id }}">
-
-                                            <button type="button" class="btn btn-sm btn-danger"
-                                                onclick="confirmDelete('{{ $timeline->id }}')">
-                                                <i class="fas fa-trash"></i> <!-- Font Awesome trash icon -->
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            {{-- <tr>
-                                <td colspan="7" class="text-center">No timelines found.</td>
-                            </tr> --}}
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>Report Name</th>
+                    <th>Type</th>
+                    <th>Year</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="timelines-container">
+                @forelse ($timelines as $timeline)
+                    <tr>
+                        <td>{{ $timeline->ReportName }}</td>
+                        <td>{{ $timeline->Type }}</td>
+                        <td>{{ $timeline->Year }}</td>
+                        <td>
+                            <span
+                                class="badge {{ $timeline->status == 'Completed' ? 'badge-success' : ($timeline->status == 'In Progress' ? 'badge-warning' : 'badge-error') }}">
+                                {{ $timeline->status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="flex space-x-2">
+                                <button class="btn btn-outline btn-sm"
+                                    onclick="edit_timeline_modal_{{ $timeline->id }}.showModal()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path
+                                            d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
+                                </button>
+                                <button class="btn btn-outline btn-error btn-sm"
+                                    onclick="confirmDelete('{{ $timeline->id }}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="text-center text-gray-500 dark:text-gray-400">No timelines found.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- Add New Timeline Modal -->
-<div class="modal fade" id="addTimelineModal" tabindex="-1" aria-labelledby="addTimelineModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="addTimelineModalLabel">Add New MPA Timeline</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
+<dialog id="add_timeline_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-white dark:bg-gray-800">
+        <h3 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">Add New MPA Timeline</h3>
+        <form action="{{ route('MassInsert') }}" method="POST" id="addTimelineForm">
+            @csrf
+            <input type="hidden" name="TableName" value="mpa_timelines">
+            <div class="space-y-4">
+                <div class="form-control">
+                    <label class="label" for="ReportName">
+                        <span class="label-text">Report Name</span>
+                    </label>
+                    <input type="text" id="ReportName" name="ReportName" class="input input-bordered w-full"
+                        required>
+                </div>
+                <div class="form-control">
+                    <label class="label" for="Type">
+                        <span class="label-text">Type</span>
+                    </label>
+                    <select id="Type" name="Type" class="select select-bordered w-full" required>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Bi-Annual">Bi-Annual</option>
+                        <option value="Annually Reported">Annually Reported</option>
+                    </select>
+                </div>
+                <div class="form-control">
+                    <label class="label" for="Description">
+                        <span class="label-text">Description</span>
+                    </label>
+                    <textarea id="Description" name="Description" class="textarea textarea-bordered h-24"></textarea>
+                </div>
+                <div class="form-control">
+                    <label class="label" for="Year">
+                        <span class="label-text">Year</span>
+                    </label>
+                    <input type="text" id="Year" name="Year" class="input input-bordered w-full"
+                        maxlength="4" pattern="\d{4}" required>
+                </div>
+                <div class="form-control">
+                    <label class="label" for="status">
+                        <span class="label-text">Status</span>
+                    </label>
+                    <select id="status" name="status" class="select select-bordered w-full" required>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-control" id="lastBiAnnualWrapper" style="display: none;">
+                    <label class="label cursor-pointer">
+                        <span class="label-text">Last Bi-Annual</span>
+                        <input type="checkbox" name="LastBiAnnual" value="1" class="checkbox">
+                    </label>
+                </div>
             </div>
-            <div class="modal-body">
-                <form action="{{ route('MassInsert') }}" method="POST" id="addTimelineForm">
-                    @csrf
-                    <div class="mb-3">
-                        <input type="hidden" name="TableName" value="mpa_timelines">
-
-                        <label for="ReportName" class="form-label">Report Name</label>
-                        <input type="text" class="form-control" id="ReportName" name="ReportName" required>
-                    </div>
-                    <div class="mb-3 d-none">
-                        <label for="ReportingID" class="form-label">Reporting ID</label>
-                        <input type="text" class="form-control" id="ReportingID" name="ReportingID"
-                            placeholder="Auto-generated" readonly value="{{ md5(uniqid() . date('now')) }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="Type" class="form-label">Type</label>
-                        <select class="form-control type-select" id="Type" name="Type" required>
-                            <option value="Quarterly">Quarterly</option>
-                            <option value="Bi-Annual">Bi-Annual</option>
-                            <option value="Annually Reported">Annually Reported</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="Description" class="form-label">Description</label>
-                        <textarea class="form-control" id="Description" name="Description" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="Year" class="form-label">Year</label>
-                        <input type="text" class="form-control" id="Year" name="Year" maxlength="4"
-                            pattern="\d{4}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-control" id="status" name="status" required>
-                            <option value="Pending">Pending</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 form-check last-biannual-wrapper">
-                        <!-- Hidden input ensures a value is submitted when checkbox is unchecked -->
-                        <input type="hidden" name="LastBiAnnual" value="0">
-                        <input type="checkbox" class="form-check-input" id="LastBiAnnual" name="LastBiAnnual"
-                            value="1">
-                        <label class="form-check-label" for="LastBiAnnual">Last Bi-Annual</label>
-                    </div>
-                </form>
+            <div class="modal-action">
+                <button type="button" class="btn btn-outline" onclick="add_timeline_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-active">Save</button>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="addTimelineForm" class="btn btn-primary">Save</button>
-            </div>
-        </div>
+        </form>
     </div>
-</div>
+</dialog>
 
 <!-- Edit Timeline Modals -->
 @foreach ($timelines as $timeline)
-    <div class="modal fade" id="editTimelineModal-{{ $timeline->id }}" tabindex="-1"
-        aria-labelledby="editTimelineModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="editTimelineModalLabel">Edit MPA Timeline</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ route('MassUpdate', $timeline->id) }}" method="POST"
-                        id="editTimelineForm-{{ $timeline->id }}">
-                        @csrf
-                        @method('PUT')
-                        <div class="mb-3">
-                            <input type="hidden" name="TableName" value="mpa_timelines">
-
-                            <input type="hidden" name="id" value="{{ $timeline->id }}">
-                            <label for="ReportName-{{ $timeline->id }}" class="form-label">Report Name</label>
-                            <input type="text" class="form-control" id="ReportName-{{ $timeline->id }}"
-                                name="ReportName" value="{{ $timeline->ReportName }}" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="editType-{{ $timeline->id }}" class="form-label">Type</label>
-                            <select class="form-control type-select" id="editType-{{ $timeline->id }}"
-                                name="Type" required>
-                                <option value="Quarterly" {{ $timeline->Type == 'Quarterly' ? 'selected' : '' }}>
-                                    Quarterly</option>
-                                <option value="Bi-Annual" {{ $timeline->Type == 'Bi-Annual' ? 'selected' : '' }}>
-                                    Bi-Annual</option>
-                                <option value="Annual" {{ $timeline->Type == 'Annual' ? 'selected' : '' }}>Annual
-                                </option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="Description-{{ $timeline->id }}" class="form-label">Description</label>
-                            <textarea class="form-control" id="Description-{{ $timeline->id }}" name="Description" rows="3">{{ $timeline->Description }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="Year-{{ $timeline->id }}" class="form-label">Year</label>
-                            <input type="text" class="form-control" id="Year-{{ $timeline->id }}" name="Year"
-                                value="{{ $timeline->Year }}" maxlength="4" pattern="\d{4}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="status-{{ $timeline->id }}" class="form-label">Status</label>
-                            <select class="form-control" id="status-{{ $timeline->id }}" name="status" required>
-                                <option value="Pending" {{ $timeline->status == 'Pending' ? 'selected' : '' }}>Pending
-                                </option>
-                                <option value="In Progress"
-                                    {{ $timeline->status == 'In Progress' ? 'selected' : '' }}>In Progress</option>
-                                <option value="Completed" {{ $timeline->status == 'Completed' ? 'selected' : '' }}>
-                                    Completed</option>
-                            </select>
-                        </div>
-                        <div class="mb-3 form-check last-biannual-wrapper">
-                            <!-- Hidden input ensures a value is submitted when checkbox is unchecked -->
-                            <input type="hidden" name="LastBiAnnual" value="0">
-                            <input type="checkbox" class="form-check-input"
-                                id="editLastBiAnnual-{{ $timeline->id }}" name="LastBiAnnual" value="1"
+    <dialog id="edit_timeline_modal_{{ $timeline->id }}" class="modal modal-bottom sm:modal-middle">
+        <div class="modal-box bg-white dark:bg-gray-800">
+            <h3 class="font-bold text-lg mb-4 text-gray-800 dark:text-white">Edit MPA Timeline</h3>
+            <form action="{{ route('MassUpdate', $timeline->id) }}" method="POST"
+                id="editTimelineForm-{{ $timeline->id }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="TableName" value="mpa_timelines">
+                <input type="hidden" name="id" value="{{ $timeline->id }}">
+                <div class="space-y-4">
+                    <div class="form-control">
+                        <label class="label" for="ReportName-{{ $timeline->id }}">
+                            <span class="label-text">Report Name</span>
+                        </label>
+                        <input type="text" id="ReportName-{{ $timeline->id }}" name="ReportName"
+                            value="{{ $timeline->ReportName }}" class="input input-bordered w-full" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="Type-{{ $timeline->id }}">
+                            <span class="label-text">Type</span>
+                        </label>
+                        <select id="Type-{{ $timeline->id }}" name="Type" class="select select-bordered w-full"
+                            required>
+                            <option value="Quarterly" {{ $timeline->Type == 'Quarterly' ? 'selected' : '' }}>Quarterly
+                            </option>
+                            <option value="Bi-Annual" {{ $timeline->Type == 'Bi-Annual' ? 'selected' : '' }}>Bi-Annual
+                            </option>
+                            <option value="Annually Reported"
+                                {{ $timeline->Type == 'Annually Reported' ? 'selected' : '' }}>Annually Reported
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="Description-{{ $timeline->id }}">
+                            <span class="label-text">Description</span>
+                        </label>
+                        <textarea id="Description-{{ $timeline->id }}" name="Description" class="textarea textarea-bordered h-24">{{ $timeline->Description }}</textarea>
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="Year-{{ $timeline->id }}">
+                            <span class="label-text">Year</span>
+                        </label>
+                        <input type="text" id="Year-{{ $timeline->id }}" name="Year"
+                            value="{{ $timeline->Year }}" class="input input-bordered w-full" maxlength="4"
+                            pattern="\d{4}" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="status-{{ $timeline->id }}">
+                            <span class="label-text">Status</span>
+                        </label>
+                        <select id="status-{{ $timeline->id }}" name="status" class="select select-bordered w-full"
+                            required>
+                            <option value="Pending" {{ $timeline->status == 'Pending' ? 'selected' : '' }}>Pending
+                            </option>
+                            <option value="In Progress" {{ $timeline->status == 'In Progress' ? 'selected' : '' }}>In
+                                Progress</option>
+                            <option value="Completed" {{ $timeline->status == 'Completed' ? 'selected' : '' }}>
+                                Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-control" id="lastBiAnnualWrapper-{{ $timeline->id }}"
+                        style="{{ $timeline->Type == 'Bi-Annual' ? '' : 'display: none;' }}">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Last Bi-Annual</span>
+                            <input type="checkbox" name="LastBiAnnual" value="1" class="checkbox"
                                 {{ $timeline->LastBiAnnual ? 'checked' : '' }}>
-                            <label class="form-check-label" for="editLastBiAnnual-{{ $timeline->id }}">Last
-                                Bi-Annual</label>
-                        </div>
-                    </form>
+                        </label>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" form="editTimelineForm-{{ $timeline->id }}"
-                        class="btn btn-primary">Update</button>
+                <div class="modal-action">
+                    <button type="button" class="btn btn-outline"
+                        onclick="edit_timeline_modal_{{ $timeline->id }}.close()">Cancel</button>
+                    <button type="submit" class="btn btn-active">Update</button>
                 </div>
-            </div>
+            </form>
         </div>
-    </div>
+    </dialog>
 @endforeach
 
-<!-- SweetAlert2 Script for Delete Confirmation -->
+<!-- Delete Confirmation Modal -->
+<dialog id="delete_confirm_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-white dark:bg-gray-800">
+        <h3 class="font-bold text-lg text-error">Confirm Deletion</h3>
+        <p class="py-4 text-gray-700 dark:text-gray-300">Are you sure you want to delete this timeline? This action
+            cannot be undone.</p>
+        <div class="modal-action">
+            <form id="delete-form" action="{{ route('MassDelete') }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="id" id="delete-id">
+                <input type="hidden" name="TableName" value="mpa_timelines">
+                <button type="button" class="btn btn-outline mr-2"
+                    onclick="delete_confirm_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-outline btn-error">Delete</button>
+            </form>
+        </div>
+    </div>
+</dialog>
 
 <script>
     function confirmDelete(timelineId) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You won't be able to revert this!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('delete-form-' + timelineId).submit();
-            }
-        });
+        const deleteForm = document.getElementById('delete-form');
+        const deleteIdInput = document.getElementById('delete-id');
+        deleteIdInput.value = timelineId;
+        delete_confirm_modal.showModal();
     }
-</script>
 
-<!-- Script to toggle the display of Last Bi-Annual based on Type selection -->
-<script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.type-select').forEach(function(selectElem) {
-            // Find the nearest form and the associated last-biannual wrapper inside it.
-            var form = selectElem.closest('form');
-            if (!form) return;
-            var wrapper = form.querySelector('.last-biannual-wrapper');
-            if (!wrapper) return;
+        const searchInput = document.getElementById('search-input');
+        const timelinesContainer = document.getElementById('timelines-container');
+        const timelineRows = timelinesContainer.querySelectorAll('tr');
 
-            function toggleWrapper() {
-                if (selectElem.value === 'Bi-Annual') {
-                    wrapper.style.display = 'block';
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+
+            timelineRows.forEach(row => {
+                const reportName = row.querySelector('td:first-child').textContent
+                    .toLowerCase();
+                const type = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const year = row.querySelector('td:nth-child(3)').textContent;
+
+                if (reportName.includes(searchTerm) || type.includes(searchTerm) || year
+                    .includes(searchTerm)) {
+                    row.style.display = '';
                 } else {
-                    wrapper.style.display = 'none';
-                    // Optionally, uncheck the checkbox when hiding
-                    var checkbox = wrapper.querySelector('input[type="checkbox"]');
-                    if (checkbox) checkbox.checked = false;
+                    row.style.display = 'none';
+                }
+            });
+
+            const visibleRows = timelinesContainer.querySelectorAll('tr[style="display: "";"]');
+            if (visibleRows.length === 0) {
+                const noResults = document.createElement('tr');
+                noResults.innerHTML =
+                    '<td colspan="5" class="text-center text-gray-500 dark:text-gray-400">No matching timelines found</td>';
+                timelinesContainer.appendChild(noResults);
+            } else {
+                const existingNoResults = timelinesContainer.querySelector('tr td[colspan="5"]');
+                if (existingNoResults) {
+                    existingNoResults.closest('tr').remove();
                 }
             }
+        });
 
-            // Initialize on page load
-            toggleWrapper();
-
-            // Attach change event
-            selectElem.addEventListener('change', toggleWrapper);
+        // Toggle Last Bi-Annual checkbox visibility based on Type selection
+        const typeSelects = document.querySelectorAll('select[name="Type"]');
+        typeSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                const formId = this.closest('form').id;
+                const lastBiAnnualWrapper = document.getElementById(
+                    `lastBiAnnualWrapper${formId.includes('edit') ? '-' + formId.split('-')[1] : ''}`
+                );
+                if (this.value === 'Bi-Annual') {
+                    lastBiAnnualWrapper.style.display = 'block';
+                } else {
+                    lastBiAnnualWrapper.style.display = 'none';
+                    lastBiAnnualWrapper.querySelector('input[type="checkbox"]').checked = false;
+                }
+            });
         });
     });
 </script>
+
+<style>
+    /* iOS-inspired styles */
+    .btn {
+        @apply font-semibold text-sm px-4 py-2 rounded-full transition-all duration-300 ease-in-out;
+    }
+
+    .btn-outline {
+        @apply border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700;
+    }
+
+    .btn-active {
+        @apply bg-blue-500 text-white hover:bg-blue-600;
+    }
+
+    .btn-outline.btn-error {
+        @apply border-red-500 text-red-500 hover:bg-red-100 dark:hover:bg-red-900;
+    }
+
+    .modal {
+        @apply backdrop-blur-sm bg-black bg-opacity-30;
+    }
+
+    .modal-box {
+        @apply rounded-2xl shadow-lg;
+    }
+
+    .table {
+        @apply rounded-lg overflow-hidden;
+    }
+
+    .table th {
+        @apply bg-gray-100 text-gray-700 font-semibold uppercase text-xs tracking-wider dark:bg-gray-700 dark:text-gray-300;
+    }
+
+    .table td {
+        @apply text-gray-700 dark:text-gray-300;
+    }
+
+    .table tr:hover {
+        @apply bg-gray-50 dark:bg-gray-600;
+    }
+</style>

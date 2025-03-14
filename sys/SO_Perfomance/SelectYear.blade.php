@@ -1,54 +1,39 @@
-<div class="container-fluid p-0">
-    <div class="row g-0 min-vh-100">
-        <!-- Left side: Decorative section -->
-        <div class="col-lg-5 d-none d-lg-flex align-items-center justify-content-center bg-primary-subtle">
-            <div class="text-center">
-                <h1 class="display-1 fw-bold text-primary mb-4 animate__animated animate__fadeInUp">ECSA-HC</h1>
-                <p class="lead text-muted animate__animated animate__fadeInUp animate__delay-1s">
-                    Strategic performance tracking
-                </p>
-                <div class="mt-5 animate__animated animate__fadeInUp animate__delay-2s">
-                    <div class="eco-system">
-                        <div class="orbit">
-                            <div class="planet planet-1"></div>
-                            <div class="planet planet-2"></div>
-                            <div class="planet planet-3"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="h-screen flex items-center justify-center bg-base-100 overflow-hidden">
+    <div class="card bg-base-100 shadow-xl border border-base-200 w-full max-w-md">
+        <div class="card-body p-6 relative">
+            <!-- Dark mode toggle positioned absolutely -->
+            <div class="absolute top-4 right-4">
+                <label class="swap swap-rotate">
+                    <input type="checkbox" id="darkModeSwitch" class="theme-controller" value="dark" />
 
-        <!-- Right side: Year selection form -->
-        <div class="col-lg-7 d-flex align-items-center justify-content-center bg-body-tertiary">
-            <div class="w-100 p-4 p-md-5" style="max-width: 420px;">
-                <div class="text-end mb-4">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="darkModeSwitch">
-                        <label class="form-check-label" for="darkModeSwitch">
-                            <i class="ti ti-moon"></i>
-                        </label>
-                    </div>
-                </div>
-                <h2 class="display-6 fw-bold mb-4 text-center animate__animated animate__fadeInDown">
-                    Select Reporting Year
-                </h2>
-                <p class="text-muted text-center mb-5 animate__animated animate__fadeInDown animate__delay-1s">
+                </label>
+            </div>
+
+            <div>
+                <h2 class="text-2xl font-bold text-center mb-2 animate-fade-in">Select Reporting Year</h2>
+                <p class="text-base-content/60 text-center mb-6 animate-fade-in-delay-1">
                     Choose a year to view strategic objective performance
                 </p>
-                <form id="yearSelectForm" class="animate__animated animate__fadeInUp animate__delay-2s">
-                    <div class="mb-4">
-                        <select id="yearSelect" class="form-select form-select-lg" required>
+
+                <form id="yearSelectForm" class="animate-fade-in-delay-2 space-y-4">
+                    <div class="form-control">
+                        <select id="yearSelect" class="select select-bordered w-full text-base" required>
                             <option value="" selected disabled>Select a year</option>
                             @foreach ($years as $year)
                                 <option value="{{ $year }}">{{ $year }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary btn-lg px-5 py-3" disabled>
+
+                    <div class="form-control">
+                        <button type="submit" id="submitButton" class="btn btn-primary w-full" disabled>
                             Continue
-                            <i class="ti ti-arrow-right ms-2"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </button>
                     </div>
                 </form>
@@ -58,159 +43,131 @@
 </div>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* Force everything to fit exactly in the viewport without scrolling */
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+        margin: 0;
+    }
 
     :root {
-        --primary-color: #4e73df;
-        --secondary-color: #858796;
-        --success-color: #1cc88a;
-        --info-color: #36b9cc;
-        --warning-color: #f6c23e;
-        --danger-color: #e74a3b;
-        --light-color: #f8f9fc;
-        --dark-color: #5a5c69;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
     }
 
-    body {
-        font-family: 'Inter', sans-serif;
-        transition: background-color 0.3s ease, color 0.3s ease;
+    .animate-fade-in {
+        animation: fadeIn 0.8s ease-in-out forwards;
     }
 
-    .dark-mode {
-        background-color: #1a202c;
-        color: #e2e8f0;
+    .animate-fade-in-delay-1 {
+        opacity: 0;
+        animation: fadeIn 0.8s ease-in-out forwards;
+        animation-delay: 0.3s;
     }
 
-    .eco-system {
-        width: 200px;
-        height: 200px;
-        margin: 0 auto;
-        position: relative;
+    .animate-fade-in-delay-2 {
+        opacity: 0;
+        animation: fadeIn 0.8s ease-in-out forwards;
+        animation-delay: 0.6s;
     }
 
-    .orbit {
-        width: 100%;
-        height: 100%;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        animation: orbit 20s linear infinite;
-    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
 
-    .planet {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin: -10px 0 0 -10px;
-    }
-
-    .planet-1 {
-        background-color: var(--primary-color);
-        animation: planet1 8s linear infinite;
-    }
-
-    .planet-2 {
-        background-color: var(--success-color);
-        animation: planet2 12s linear infinite;
-    }
-
-    .planet-3 {
-        background-color: var(--warning-color);
-        animation: planet3 16s linear infinite;
-    }
-
-    @keyframes orbit {
-        100% {
-            transform: rotate(360deg);
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
 
-    @keyframes planet1 {
-        0% {
-            transform: rotate(0deg) translateX(60px) rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg) translateX(60px) rotate(-360deg);
-        }
+    .select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1rem;
+        padding-right: 2.5rem;
+        border-radius: 0.75rem;
+        height: 3rem;
+        font-size: 1rem;
+        transition: all 0.2s ease;
     }
 
-    @keyframes planet2 {
-        0% {
-            transform: rotate(0deg) translateX(90px) rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg) translateX(90px) rotate(-360deg);
-        }
+    .select:focus {
+        box-shadow: 0 0 0 2px rgba(var(--p) / 0.2);
     }
 
-    @keyframes planet3 {
-        0% {
-            transform: rotate(0deg) translateX(40px) rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg) translateX(40px) rotate(-360deg);
-        }
-    }
-
-    .form-select {
-        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-
-    .form-select:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    .btn {
+        border-radius: 0.75rem;
+        height: 3rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
     }
 
     .btn-primary {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
+        background-image: linear-gradient(to right, hsl(var(--p)), hsl(var(--s)));
+        border: none;
+        box-shadow: 0 4px 10px rgba(var(--p) / 0.2);
     }
 
     .btn-primary:hover {
-        background-color: #2e59d9;
-        border-color: #2653d4;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(var(--p) / 0.3);
     }
 
-    .btn-primary:focus {
-        box-shadow: 0 0 0 0.25rem rgba(105, 136, 228, 0.5);
+    .btn-primary:active {
+        transform: translateY(0);
     }
 
-    @media (max-width: 991.98px) {
-        .row {
-            flex-direction: column;
-        }
-
-        .col-lg-5 {
-            display: none !important;
-        }
-
-        .col-lg-7 {
-            min-height: 100vh;
-        }
+    .card {
+        border-radius: 1.5rem;
+        backdrop-filter: blur(10px);
     }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const darkModeSwitch = document.getElementById('darkModeSwitch');
-        const body = document.body;
         const yearSelect = document.getElementById('yearSelect');
         const yearSelectForm = document.getElementById('yearSelectForm');
-        const submitButton = yearSelectForm.querySelector('button[type="submit"]');
+        const submitButton = document.getElementById('submitButton');
+
+        // Check for saved theme preference or system preference
+        if (localStorage.getItem('theme') === 'dark' ||
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            darkModeSwitch.checked = true;
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            darkModeSwitch.checked = false;
+        }
 
         // Dark mode toggle
         darkModeSwitch.addEventListener('change', function() {
-            body.classList.toggle('dark-mode', this.checked);
+            if (this.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
         });
 
         // Enable/disable submit button based on selection
         yearSelect.addEventListener('change', function() {
             submitButton.disabled = !this.value;
+            if (this.value) {
+                submitButton.classList.add('animate-pulse');
+                setTimeout(() => {
+                    submitButton.classList.remove('animate-pulse');
+                }, 500);
+            }
         });
 
         // Form submission
@@ -218,26 +175,10 @@
             e.preventDefault();
             const selectedYear = yearSelect.value;
             if (selectedYear) {
-                window.location.href = `/Ecsa_SO_selectReport?year=${selectedYear}`;
-            }
-        });
-
-        // Optional: Add some animation when selecting a year
-        yearSelect.addEventListener('change', function() {
-            if (this.value) {
-                this.animate([{
-                        transform: 'scale(1)'
-                    },
-                    {
-                        transform: 'scale(1.05)'
-                    },
-                    {
-                        transform: 'scale(1)'
-                    }
-                ], {
-                    duration: 300,
-                    iterations: 1
-                });
+                submitButton.classList.add('loading');
+                setTimeout(() => {
+                    window.location.href = `/Ecsa_SO_selectReport?year=${selectedYear}`;
+                }, 300);
             }
         });
     });

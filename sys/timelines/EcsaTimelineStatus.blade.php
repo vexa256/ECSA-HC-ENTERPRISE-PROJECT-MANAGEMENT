@@ -1,182 +1,183 @@
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        {{-- <div class="row g-2 align-items-center">
-            <div class="col-auto ms-auto d-print-none">
-                <div class="btn-list">
-                    <!-- Button to Open Add Timeline Modal -->
-                    <button type="button" class="btn btn-primary d-none d-sm-inline-block" data-bs-toggle="modal"
-                        data-bs-target="#addTimelineModal">
-                        <i class="fas fa-plus"></i> <!-- Font Awesome plus icon -->
-                        Add New Timeline
-                    </button>
-                </div>
-            </div>
+<div class="container mx-auto px-4 py-8">
+    <!-- Top Bar: Search -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
+        <!-- Search Input -->
+        <div>
+            <input type="text" id="searchInput" placeholder="Search Timelines..."
+                class="input input-bordered input-sm w-full md:w-64" />
         </div>
-    </div> --}}
+        <!-- (No "Add" functionality) -->
     </div>
 
-    <div class="page-body">
-        <div class="container-xl">
-            <!-- Timelines Table -->
-            <div class="card">
-                <div class="table-responsive">
-                    <table class="table table-vcenter card-table">
-                        <thead>
-                            <tr>
-                                {{-- <th>ID</th> --}}
-                                <th>Report Name</th>
-                                <th>Type</th>
-                                <th>Year</th>
-                                <th>Status</th>
-                                <th>Last Bi-Annual</th>
-                                <th class="w-1">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($timelines as $timeline)
-                                <tr>
-                                    {{-- <td>{{ $timeline->id }}</td> --}}
-                                    <td>{{ $timeline->ReportName }}</td>
-                                    <td>{{ $timeline->Type }}</td>
-                                    <td>{{ $timeline->Year }}</td>
-                                    <td>
-                                        <span
-                                            class="badge text-light bg-{{ $timeline->status == 'Completed' ? 'success' : ($timeline->status == 'In Progress' ? 'warning' : 'danger') }}">
-                                            {{ $timeline->status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if ($timeline->Type == 'Bi-Annual')
-                                            {{ $timeline->LastBiAnnual ? 'Yes' : 'No' }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="btn-list flex-nowrap">
-                                            <!-- Edit Button -->
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#editTimelineModal-{{ $timeline->id }}">
-                                                <i class="fas fa-edit"></i> <!-- Font Awesome edit icon -->
-                                                Edit
-                                            </button>
-
-                                            <!-- Delete Button -->
-
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                {{-- <tr>
-                                <td colspan="7" class="text-center">No timelines found.</td>
-                            </tr> --}}
-                            @endforelse
-                        </tbody>
-                    </table>
+    <!-- Timeline Cards (Grid) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="timelineCards">
+        @forelse ($timelines as $timeline)
+            <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                <div class="card-body">
+                    <h2 class="card-title text-lg font-semibold mb-2">
+                        {{ $timeline->ReportName }}
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2 text-sm mb-4">
+                        <div>
+                            <span class="font-medium">Type:</span> {{ $timeline->Type }}
+                        </div>
+                        <div>
+                            <span class="font-medium">Year:</span> {{ $timeline->Year }}
+                        </div>
+                        <div>
+                            <span class="font-medium">Status:</span>
+                            <span
+                                class="badge 
+                                    @if ($timeline->status == 'Completed') badge-success 
+                                    @elseif($timeline->status == 'In Progress') 
+                                        badge-warning 
+                                    @else 
+                                        badge-error @endif
+                                    ml-1
+                                ">
+                                {{ $timeline->status }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="font-medium">Last Bi-Annual:</span>
+                            @if ($timeline->Type === 'Bi-Annual')
+                                {{ $timeline->LastBiAnnual ? 'Yes' : 'No' }}
+                            @else
+                                -
+                            @endif
+                        </div>
+                    </div>
+                    <div class="card-actions justify-end">
+                        <!-- Edit Button -->
+                        <label for="editTimelineModal-{{ $timeline->id }}" class="btn btn-outline btn-sm">
+                            <span class="iconify inline-block mr-1" data-icon="mdi:pencil"></span>
+                            Edit
+                        </label>
+                        <!-- Delete Button -->
+                        <button class="btn btn-outline btn-sm" onclick="confirmDelete({{ $timeline->id }})">
+                            <span class="iconify inline-block mr-1" data-icon="mdi:trash-can-outline"></span>
+                            Delete
+                        </button>
+                    </div>
                 </div>
+            </div>
+        @empty
+            <div class="col-span-full text-center py-8">
+                <p class="text-gray-500">No timelines found.</p>
+            </div>
+        @endforelse
+    </div>
+</div>
+
+<!-- ====================== -->
+<!-- Edit Timeline Modals -->
+<!-- ====================== -->
+@foreach ($timelines as $timeline)
+    <input type="checkbox" id="editTimelineModal-{{ $timeline->id }}" class="modal-toggle" />
+    <div class="modal">
+        <div class="modal-box relative max-w-xl">
+            <label for="editTimelineModal-{{ $timeline->id }}" class="btn btn-sm btn-circle absolute right-2 top-2">
+                ✕
+            </label>
+
+            <h3 class="text-lg font-bold mb-4">
+                Edit Reporting Status: {{ $timeline->ReportName }}
+            </h3>
+
+            <form action="{{ route('MassUpdate', $timeline->id) }}" method="POST"
+                id="editTimelineForm-{{ $timeline->id }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="TableName" value="ecsahc_timelines">
+                <input type="hidden" name="id" value="{{ $timeline->id }}">
+
+                <div class="form-control mb-4">
+                    <label class="label font-semibold" for="status-{{ $timeline->id }}">
+                        Status
+                    </label>
+                    <select id="status-{{ $timeline->id }}" name="status" class="select select-bordered w-full"
+                        required>
+                        <option value="Pending" @if ($timeline->status === 'Pending') selected @endif>
+                            Pending
+                        </option>
+                        <option value="In Progress" @if ($timeline->status === 'In Progress') selected @endif>
+                            In Progress
+                        </option>
+                        <option value="Completed" @if ($timeline->status === 'Completed') selected @endif>
+                            Completed
+                        </option>
+                    </select>
+                </div>
+            </form>
+
+            <div class="modal-action">
+                <!-- Cancel Button -->
+                <label for="editTimelineModal-{{ $timeline->id }}" class="btn btn-outline btn-sm">
+                    <span class="iconify inline-block mr-1" data-icon="mdi:close-circle-outline"></span>
+                    Cancel
+                </label>
+                <!-- Update Button -->
+                <button type="submit" form="editTimelineForm-{{ $timeline->id }}"
+                    class="btn btn-active btn-neutral btn-sm">
+                    <span class="iconify inline-block mr-1" data-icon="mdi:check-circle-outline"></span>
+                    Update
+                </button>
             </div>
         </div>
     </div>
+@endforeach
 
+<!-- ===================== -->
+<!-- Delete Timeline Forms -->
+<!-- ===================== -->
+@foreach ($timelines as $timeline)
+    <form id="delete-form-{{ $timeline->id }}" action="{{ route('MassDelete', $timeline->id) }}" method="POST"
+        style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+@endforeach
 
-    <!-- Edit Timeline Modals -->
-    @foreach ($timelines as $timeline)
-        <div class="modal fade" id="editTimelineModal-{{ $timeline->id }}" tabindex="-1"
-            aria-labelledby="editTimelineModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="editTimelineModalLabel">Edit Reporting Status :
-                            {{ $timeline->ReportName }}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="{{ route('MassUpdate', $timeline->id) }}" method="POST"
-                            id="editTimelineForm-{{ $timeline->id }}">
-                            @csrf
-                            @method('PUT')
-                            <div class="mb-3">
-                                <input type="hidden" name="TableName" value="ecsahc_timelines">
+<!-- ===================== -->
+<!-- Page Scripts -->
+<!-- ===================== -->
+<script>
+    // SweetAlert2 Delete Confirmation
+    function confirmDelete(timelineId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('delete-form-' + timelineId).submit();
+            }
+        });
+    }
 
-                                <input type="hidden" name="id" value="{{ $timeline->id }}">
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM-based Search: filters cards by text
+        const searchInput = document.getElementById('searchInput');
+        const cardSelector = '#timelineCards .card';
 
-                            </div>
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                const cards = document.querySelectorAll(cardSelector);
 
-
-
-
-                            <div class="mb-3">
-                                <label for="status-{{ $timeline->id }}" class="form-label">Status</label>
-                                <select class="form-control" id="status-{{ $timeline->id }}" name="status" required>
-                                    <option value="Pending" {{ $timeline->status == 'Pending' ? 'selected' : '' }}>
-                                        Pending
-                                    </option>
-                                    <option value="In Progress"
-                                        {{ $timeline->status == 'In Progress' ? 'selected' : '' }}>In Progress</option>
-                                    <option value="Completed" {{ $timeline->status == 'Completed' ? 'selected' : '' }}>
-                                        Completed</option>
-                                </select>
-                            </div>
-
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" form="editTimelineForm-{{ $timeline->id }}"
-                            class="btn btn-primary">Update</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endforeach
-
-    <!-- SweetAlert2 Script for Delete Confirmation -->
-
-    <script>
-        function confirmDelete(timelineId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + timelineId).submit();
-                }
+                cards.forEach((card) => {
+                    const cardText = card.textContent.toLowerCase();
+                    if (cardText.includes(query)) {
+                        card.parentElement.style.display = '';
+                    } else {
+                        card.parentElement.style.display = 'none';
+                    }
+                });
             });
         }
-    </script>
-
-    <!-- Script to toggle the display of Last Bi-Annual based on Type selection -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.type-select').forEach(function(selectElem) {
-                // Find the nearest form and the associated last-biannual wrapper inside it.
-                var form = selectElem.closest('form');
-                if (!form) return;
-                var wrapper = form.querySelector('.last-biannual-wrapper');
-                if (!wrapper) return;
-
-                function toggleWrapper() {
-                    if (selectElem.value === 'Bi-Annual') {
-                        wrapper.style.display = 'block';
-                    } else {
-                        wrapper.style.display = 'none';
-                        // Optionally, uncheck the checkbox when hiding
-                        var checkbox = wrapper.querySelector('input[type="checkbox"]');
-                        if (checkbox) checkbox.checked = false;
-                    }
-                }
-
-                // Initialize on page load
-                toggleWrapper();
-
-                // Attach change event
-                selectElem.addEventListener('change', toggleWrapper);
-            });
-        });
-    </script>
+    });
+</script>

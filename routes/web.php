@@ -15,6 +15,7 @@ use App\Http\Controllers\MpaRRFController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RRFReportController;
 use App\Http\Controllers\StrategicObjectivePerfomance;
+use App\Http\Controllers\UserAccountController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
@@ -169,7 +170,7 @@ Route::middleware(['auth'])->group(function () {
     //
 
     Route::get('/dashboard', [EcsaReportingController::class, 'SelectUser'])->name('dashboard');
-    Route::get('/', [EcsaReportingController::class, 'SelectUser']);
+    Route::get('/', [EcsaReportingController::class, 'SelectUser'])->name('home');
 
 // Grouping under an 'ecsa' URI prefix for clarity.
     Route::prefix('ecsa')->group(function () {
@@ -345,4 +346,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::post('/update-account', [UserAccountController::class, 'updateAccount'])->name('user.update-account');
+    // Route::post('/logout', [UserAccountController::class, 'logout'])->name('user.logout');
+});
 require __DIR__ . '/auth.php';
+require __DIR__ . '/appraisal.php';
+require __DIR__ . '/hr.php';
+require __DIR__ . '/v2reports.php';

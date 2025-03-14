@@ -17,6 +17,7 @@ return [
         resource_path('views'),
         base_path('sys'),
         base_path('views'),
+        base_path('v2'),
     ],
 
     /*

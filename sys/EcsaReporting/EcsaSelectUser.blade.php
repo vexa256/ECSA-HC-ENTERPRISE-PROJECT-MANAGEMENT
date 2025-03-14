@@ -1,27 +1,30 @@
-<div class="page-header d-print-none">
-    <div class="container-xl">
-        <div class="row g-2 align-items-center">
-            <div class="col">
-                <h2 class="page-title">
+<div class="p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col gap-4">
+            <div class="text-left">
+                <h2 class="text-2xl font-bold">
                     Select ECSA-HC User to Begin Reporting
                 </h2>
-                <p class="text-muted mt-1">{{ $Desc }}</p>
+                <p class="text-sm text-base-content/70 mt-1">{{ $Desc }}</p>
             </div>
         </div>
     </div>
 </div>
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card">
+
+<div class="px-4 md:px-6 pb-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-8">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div class="md:col-span-8">
                         <form action="{{ route('Ecsa_SelectCluster') }}" method="GET">
                             @csrf
-                            <div class="form-floating mb-3">
-                                <select class="form-select @error('UserID') is-invalid @enderror" id="UserID"
-                                    name="UserID" required data-bs-toggle="select" data-placeholder="Choose a user..."
-                                    data-allow-clear="true">
+                            <div class="form-control w-full mb-4">
+                                <label class="label" for="UserID">
+                                    <span class="label-text">Select ECSA-HC User</span>
+                                </label>
+                                <select class="select select-bordered w-full @error('UserID') select-error @enderror"
+                                    id="UserID" name="UserID" required>
                                     <option value="">Select a user...</option>
                                     @foreach ($users as $user)
                                         @if (Auth::user()->AccountRole === 'Admin' || $user->UserID === Auth::user()->UserID)
@@ -32,18 +35,18 @@
                                         @endif
                                     @endforeach
                                 </select>
-                                <label for="UserID">Select ECSA-HC User</label>
                                 @error('UserID')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ $message }}</span>
+                                    </label>
                                 @enderror
                             </div>
 
-                            <div class="mt-4">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                        class="icon icon-tabler icon-tabler-user-check" width="24" height="24"
-                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                        stroke-linecap="round" stroke-linejoin="round">
+                            <div class="mt-6">
+                                <button type="submit" class="btn btn-primary w-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24"
+                                        stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                         <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
                                         <path d="M6 21v-2a4 4 0 0 1 4 -4h4"></path>
@@ -54,52 +57,12 @@
                             </div>
                         </form>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-primary-subtle">
-                            <div class="card-body">
-                                <h3 class="card-title text-primary">Why Select a User?</h3>
-                                <p class="text-muted">Selecting a user allows us to:</p>
-                                <ul class="list-unstyled space-y-1">
-                                    <li class="d-flex">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            class="icon icon-tabler icon-tabler-check text-primary" width="24"
-                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M5 12l5 5l10 -10"></path>
-                                        </svg>
-                                        <span class="ms-2">Personalize the reporting experience</span>
-                                    </li>
-                                    <li class="d-flex">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            class="icon icon-tabler icon-tabler-check text-primary" width="24"
-                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M5 12l5 5l10 -10"></path>
-                                        </svg>
-                                        <span class="ms-2">Access user-specific clusters</span>
-                                    </li>
-                                    <li class="d-flex">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            class="icon icon-tabler icon-tabler-check text-primary" width="24"
-                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M5 12l5 5l10 -10"></path>
-                                        </svg>
-                                        <span class="ms-2">Ensure accurate data attribution</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

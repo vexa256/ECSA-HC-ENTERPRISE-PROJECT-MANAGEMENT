@@ -1,24 +1,21 @@
 <!-- resources/views/mpaIndicators/select-entity.blade.php -->
-<div class="col-12">
-    <div class="card">
-        <!-- Card Header -->
-        <div class="card-header">
-            <h4 class="card-title">
-                {{ $Desc }}
-            </h4>
-        </div>
-
+<div class="w-full">
+    <div class="card w-full bg-base-100 shadow-xl">
         <!-- Card Body -->
         <div class="card-body">
+            <!-- Header -->
+            <h2 class="card-title text-lg font-bold mb-4">
+                {{ $Desc }}
+            </h2>
+
             <!-- Form to select MPA Entity (calls ShowEntityIndicators) -->
-            <form action="{{ route('mpaIndicators.ShowEntityIndicators') }}" method="GET">
+            <form action="{{ route('mpaIndicators.ShowEntityIndicators') }}" method="GET" class="space-y-4">
                 @csrf
 
-                <!-- Searchable Auto-Complete Select (using Tabler's data-bs-toggle="select") -->
-                <div class="mb-3">
-                    <label class="form-label" for="EntityID">Select Entity</label>
-                    <select class="form-select" data-bs-toggle="select"
-                        data-bs-placeholder="Search or select an option..." id="EntityID" name="EntityID" required>
+                <!-- Select Entity -->
+                <div class="form-control">
+                    <label for="EntityID" class="label font-semibold">Select Entity</label>
+                    <select id="EntityID" name="EntityID" class="select select-bordered w-full" required>
                         <option value="" disabled selected>Please select...</option>
                         @foreach ($entities as $ent)
                             <option value="{{ $ent->EntityID }}">
@@ -29,8 +26,8 @@
                 </div>
 
                 <!-- Submit Button -->
-                <div class="mb-3 float-end">
-                    <button type="submit" class="btn btn-primary">
+                <div class="flex justify-end">
+                    <button type="submit" class="btn btn-neutral btn-sm">
                         Manage Indicators
                     </button>
                 </div>

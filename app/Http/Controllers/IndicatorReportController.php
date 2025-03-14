@@ -160,12 +160,8 @@ class IndicatorReportController extends Controller
         // For each indicator, attach additional information:
         // a) Set a default "yearlyTargets" array using the timeline's Year.
         // b) Retrieve historical reporting data by joining mpa_reports with mpa_timelines.
+
         $indicators = $indicators->map(function ($indicator) use ($timeline, $entityID) {
-            if (! isset($indicator->yearlyTargets) || ! is_array($indicator->yearlyTargets)) {
-                $indicator->yearlyTargets = [
-                    $timeline->Year => $indicator->ExpectedTarget,
-                ];
-            }
             $indicator->history = DB::table('mpa_reports')
                 ->join('mpa_timelines', 'mpa_reports.ReportingID', '=', 'mpa_timelines.ReportingID')
                 ->select(
@@ -176,6 +172,7 @@ class IndicatorReportController extends Controller
                     'mpa_reports.ReportedBy'
                 )
                 ->where('mpa_reports.IID', $indicator->IID)
+                ->where('mpa_reports.EntityID', $entityID) // <--- ADD THIS LINE
                 ->orderBy('mpa_timelines.Year', 'desc')
                 ->get();
 

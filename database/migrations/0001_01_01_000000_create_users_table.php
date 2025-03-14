@@ -30,6 +30,28 @@ return new class extends Migration
             $table->string('JobTitle', 255)->nullable();
             $table->enum('AccountRole', ['Admin', 'User', 'Cluster Head'])->default('User');
             $table->string('UserID', 255)->unique()->nullable();
+            //
+            //
+            //
+            //
+
+            $table->string('HR_first_name')->nullable()->after('name');
+            $table->string('HR_last_name')->nullable()->after('HR_first_name');
+            $table->unsignedBigInteger('HR_position_id')->nullable()->after('HR_last_name');
+            $table->unsignedBigInteger('HR_supervisor_id')->nullable()->after('HR_position_id');
+
+            // Example: an enum or string for role. Adjust the default as needed.
+            $table->enum('HR_role', ['Supervisor', 'Non-Supervisor', 'Admin'])
+                ->default('Non-Supervisor')
+                ->after('HR_supervisor_id');
+
+            //
+            //
+            //
+
+            $table->date('HR_hire_date')->nullable()->after('HR_role');
+            $table->string('HR_department')->nullable()->after('HR_hire_date');
+
             $table->rememberToken();
             $table->timestamps();
         });
