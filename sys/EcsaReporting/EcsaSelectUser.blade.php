@@ -1,25 +1,25 @@
 <div class="p-4 md:p-6">
-    <div class="max-w-7xl mx-auto">
+    <div class="mx-auto max-w-7xl">
         <div class="flex flex-col gap-4">
             <div class="text-left">
                 <h2 class="text-2xl font-bold">
                     Select ECSA-HC User to Begin Reporting
                 </h2>
-                <p class="text-sm text-base-content/70 mt-1">{{ $Desc }}</p>
+                <p class="mt-1 text-sm text-base-content/70">{{ $Desc }}</p>
             </div>
         </div>
     </div>
 </div>
 
-<div class="px-4 md:px-6 pb-6">
-    <div class="max-w-7xl mx-auto">
-        <div class="card bg-base-100 shadow-sm">
+<div class="px-4 pb-6 md:px-6">
+    <div class="mx-auto max-w-7xl">
+        <div class="shadow-sm card bg-base-100">
             <div class="card-body">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-1">
                     <div class="md:col-span-8">
                         <form action="{{ route('Ecsa_SelectCluster') }}" method="GET">
                             @csrf
-                            <div class="form-control w-full mb-4">
+                            <div class="w-full mb-4 form-control">
                                 <label class="label" for="UserID">
                                     <span class="label-text">Select ECSA-HC User</span>
                                 </label>
@@ -43,8 +43,8 @@
                             </div>
 
                             <div class="mt-6">
-                                <button type="submit" class="btn btn-primary w-full">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24"
+                                <button type="submit" class="w-full btn btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" viewBox="0 0 24 24"
                                         stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
                                         stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>

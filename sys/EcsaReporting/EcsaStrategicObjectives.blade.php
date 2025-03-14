@@ -1,12 +1,12 @@
-<div class="container mx-auto px-4 py-8">
+<div class="container px-4 py-8 mx-auto">
     <header class="mb-8">
-        <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="flex flex-col items-center justify-between md:flex-row">
             <div>
-                <h1 class="text-2xl font-bold mb-2">Select Strategic Objective</h1>
+                <h1 class="mb-2 text-2xl font-bold">Select Strategic Objective</h1>
                 <p class="text-base-content/70">{{ $Desc }}</p>
             </div>
             <a href="{{ route('Ecsa_SelectTimeline', ['UserID' => $UserID, 'ClusterID' => $ClusterID]) }}"
-                class="btn btn-outline btn-primary mt-4 md:mt-0">
+                class="mt-4 btn btn-outline btn-primary md:mt-0">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="w-5 h-5 mr-2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -16,11 +16,11 @@
         </div>
     </header>
 
-    <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <main class="grid grid-cols-1 gap-8 lg:grid-cols-1">
         <section class="lg:col-span-8">
-            <div class="card bg-base-100 shadow-xl">
+            <div class="shadow-xl card bg-base-100">
                 <div class="card-body">
-                    <h2 class="card-title text-xl mb-6">Select a Strategic Objective</h2>
+                    <h2 class="mb-6 text-xl card-title">Select a Strategic Objective</h2>
                     <form action="{{ route('Ecsa_ReportPerformanceIndicators') }}" method="GET"
                         id="strategicObjectiveForm">
                         @csrf
@@ -31,7 +31,7 @@
                         <input type="hidden" name="clusterName" value="{{ $clusterName }}">
                         <input type="hidden" name="timelineName" value="{{ $timelineName }}">
 
-                        <div class="form-control w-full mb-4">
+                        <div class="w-full mb-4 form-control">
                             <label for="StrategicObjectiveID" class="label">
                                 <span class="label-text">Strategic Objective</span>
                             </label>
@@ -54,10 +54,10 @@
                             @enderror
                         </div>
 
-                        <div id="objectiveDescription" class="alert alert-info shadow-lg mt-4 hidden" role="alert">
+                        <div id="objectiveDescription" class="hidden mt-4 shadow-lg alert alert-info" role="alert">
                             <div>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    class="stroke-current flex-shrink-0 w-6 h-6">
+                                    class="flex-shrink-0 w-6 h-6 stroke-current">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -69,7 +69,7 @@
                         </div>
 
                         <div class="mt-6">
-                            <button type="submit" class="btn btn-neutral w-full" id="submitBtn" disabled>
+                            <button type="submit" class="w-full btn btn-neutral" id="submitBtn" disabled>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -83,14 +83,14 @@
             </div>
         </section>
 
-        <aside class="lg:col-span-4 space-y-6" style="display: none">
+        <aside class="space-y-6 lg:col-span-4" style="display: none">
             <div class="card bg-primary text-primary-content">
                 <div class="card-body">
                     <h3 class="card-title">Why Select a Strategic Objective?</h3>
                     <p>Choosing a strategic objective allows you to:</p>
                     <ul class="mt-2 space-y-2">
                         <li class="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 flex-shrink-0" fill="none"
+                            <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 w-6 h-6 mr-2" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7" />
@@ -98,7 +98,7 @@
                             <span>Focus on specific organizational goals</span>
                         </li>
                         <li class="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 flex-shrink-0" fill="none"
+                            <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 w-6 h-6 mr-2" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7" />
@@ -106,7 +106,7 @@
                             <span>Align reporting with strategic priorities</span>
                         </li>
                         <li class="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 flex-shrink-0" fill="none"
+                            <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 w-6 h-6 mr-2" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7" />

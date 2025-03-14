@@ -1,12 +1,12 @@
 <!-- resources/views/timelines.blade.php -->
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">MPA Timelines</h1>
+<div class="container px-4 py-8 mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">ECSA-HC Timelines</h1>
         <!-- Updated button theme: btn-sm, btn-active, btn-neutral -->
         <button class="btn btn-sm btn-active btn-neutral"
             onclick="document.getElementById('add_timeline_modal').showModal()">
             <!-- Heroicon for "add" -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -18,18 +18,18 @@
         <table class="table w-full">
             <thead>
                 <tr class="bg-gray-100 dark:bg-gray-800">
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">ID</th>
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Report
                         Name</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closing
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Type</th>
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Year</th>
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Closing
                         Date</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status
                     </th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Last
                         Bi-Annual</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
+                    <th class="px-4 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Actions
                     </th>
                 </tr>
             </thead>
@@ -45,7 +45,7 @@
                         </td>
                         <td class="px-4 py-2 whitespace-nowrap">
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                 {{ $timeline->status == 'Completed'
                                     ? 'bg-green-100 text-green-800'
                                     : ($timeline->status == 'In Progress'
@@ -61,9 +61,9 @@
                                 -
                             @endif
                         </td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                        <td class="px-4 py-2 text-sm font-medium whitespace-nowrap">
                             <!-- Updated button theme: btn-sm, btn-active (for Edit and Delete) -->
-                            <button class="btn btn-sm btn-active mr-2"
+                            <button class="mr-2 btn btn-sm btn-active"
                                 onclick="document.getElementById('edit_timeline_modal_{{ $timeline->id }}').showModal()">
                                 Edit
                             </button>
@@ -88,21 +88,21 @@
 <!-- Add New Timeline Modal -->
 <dialog id="add_timeline_modal" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Add New Timeline</h3>
+        <h3 class="mb-4 text-lg font-bold">Add New Timeline</h3>
         <!-- Must match: Route::post('/MassInsert', ...) -->
         <form action="{{ route('MassInsert') }}" method="POST" id="addTimelineForm">
             @csrf
             <input type="hidden" name="TableName" value="ecsahc_timelines">
             <input type="hidden" name="ReportingID" value="{{ md5(uniqid() . now()) }}">
 
-            <div class="form-control mb-4">
+            <div class="mb-4 form-control">
                 <label class="label" for="ReportName">
                     <span class="label-text">Report Name</span>
                 </label>
                 <input type="text" id="ReportName" name="ReportName" class="input input-bordered" required>
             </div>
 
-            <div class="form-control mb-4">
+            <div class="mb-4 form-control">
                 <label class="label" for="Type">
                     <span class="label-text">Type</span>
                 </label>
@@ -113,14 +113,14 @@
                 </select>
             </div>
 
-            <div class="form-control mb-4">
+            <div class="mb-4 form-control">
                 <label class="label" for="Description">
                     <span class="label-text">Description</span>
                 </label>
                 <textarea id="Description" name="Description" class="textarea textarea-bordered" rows="3"></textarea>
             </div>
 
-            <div class="form-control mb-4">
+            <div class="mb-4 form-control">
                 <label class="label" for="Year">
                     <span class="label-text">Year</span>
                 </label>
@@ -128,14 +128,14 @@
                     pattern="\d{4}" required>
             </div>
 
-            <div class="form-control mb-4">
+            <div class="mb-4 form-control">
                 <label class="label" for="ClosingDate">
                     <span class="label-text">Closing Date</span>
                 </label>
                 <input type="date" id="ClosingDate" name="ClosingDate" class="input input-bordered" required>
             </div>
 
-            <div class="form-control mb-4">
+            <div class="mb-4 form-control">
                 <label class="label" for="status">
                     <span class="label-text">Status</span>
                 </label>
@@ -147,8 +147,8 @@
             </div>
 
             <!-- Only show for Bi-Annual -->
-            <div class="form-control mb-4 last-biannual-wrapper">
-                <label class="label cursor-pointer">
+            <div class="mb-4 form-control last-biannual-wrapper">
+                <label class="cursor-pointer label">
                     <span class="label-text">Last Bi-Annual</span>
                     <input type="checkbox" id="LastBiAnnual" name="LastBiAnnual" class="checkbox" value="Yes">
                 </label>
@@ -172,7 +172,7 @@
 @foreach ($timelines as $timeline)
     <dialog id="edit_timeline_modal_{{ $timeline->id }}" class="modal modal-bottom sm:modal-middle">
         <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">Edit Timeline</h3>
+            <h3 class="mb-4 text-lg font-bold">Edit Timeline</h3>
             <!-- Must match: Route::put('/MassUpdate', ...) -->
             <form action="{{ route('MassUpdate') }}" method="POST" id="editTimelineForm-{{ $timeline->id }}">
                 @csrf
@@ -180,7 +180,7 @@
                 <input type="hidden" name="TableName" value="ecsahc_timelines">
                 <input type="hidden" name="id" value="{{ $timeline->id }}">
 
-                <div class="form-control mb-4">
+                <div class="mb-4 form-control">
                     <label class="label" for="ReportName-{{ $timeline->id }}">
                         <span class="label-text">Report Name</span>
                     </label>
@@ -188,7 +188,7 @@
                         class="input input-bordered" value="{{ $timeline->ReportName }}" required>
                 </div>
 
-                <div class="form-control mb-4">
+                <div class="mb-4 form-control">
                     <label class="label" for="editType-{{ $timeline->id }}">
                         <span class="label-text">Type</span>
                     </label>
@@ -208,7 +208,7 @@
                     </select>
                 </div>
 
-                <div class="form-control mb-4">
+                <div class="mb-4 form-control">
                     <label class="label" for="Description-{{ $timeline->id }}">
                         <span class="label-text">Description</span>
                     </label>
@@ -216,7 +216,7 @@
                         rows="3">{{ $timeline->Description }}</textarea>
                 </div>
 
-                <div class="form-control mb-4">
+                <div class="mb-4 form-control">
                     <label class="label" for="Year-{{ $timeline->id }}">
                         <span class="label-text">Year</span>
                     </label>
@@ -224,7 +224,7 @@
                         value="{{ $timeline->Year }}" maxlength="4" pattern="\d{4}" required>
                 </div>
 
-                <div class="form-control mb-4">
+                <div class="mb-4 form-control">
                     <label class="label" for="ClosingDate-{{ $timeline->id }}">
                         <span class="label-text">Closing Date</span>
                     </label>
@@ -232,7 +232,7 @@
                         class="input input-bordered" value="{{ $timeline->ClosingDate }}" required>
                 </div>
 
-                <div class="form-control mb-4">
+                <div class="mb-4 form-control">
                     <label class="label" for="status-{{ $timeline->id }}">
                         <span class="label-text">Status</span>
                     </label>
@@ -248,8 +248,8 @@
                     </select>
                 </div>
 
-                <div class="form-control mb-4 last-biannual-wrapper">
-                    <label class="label cursor-pointer">
+                <div class="mb-4 form-control last-biannual-wrapper">
+                    <label class="cursor-pointer label">
                         <span class="label-text">Last Bi-Annual</span>
                         <input type="checkbox" id="editLastBiAnnual-{{ $timeline->id }}" name="LastBiAnnual"
                             class="checkbox" value="Yes" {{ $timeline->LastBiAnnual == 'Yes' ? 'checked' : '' }}>
@@ -274,7 +274,7 @@
 <!-- Delete Confirmation Modal -->
 <dialog id="confirm_modal" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box">
-        <h3 class="font-bold text-lg">Are you sure?</h3>
+        <h3 class="text-lg font-bold">Are you sure?</h3>
         <p class="py-4">You won't be able to revert this!</p>
         <div class="modal-action">
             <!-- Must match: Route::delete('/MassDelete', ...) -->
@@ -284,7 +284,7 @@
                 <input type="hidden" name="TableName" value="ecsahc_timelines">
                 <input type="hidden" id="deleteTimelineId" name="id" value="">
                 <!-- Updated button themes -->
-                <button type="button" class="btn btn-sm btn-outline mr-2"
+                <button type="button" class="mr-2 btn btn-sm btn-outline"
                     onclick="document.getElementById('confirm_modal').close()">
                     Cancel
                 </button>
@@ -300,7 +300,7 @@
 @if (session('status'))
     <dialog id="success_modal" class="modal modal-bottom sm:modal-middle" open>
         <div class="modal-box">
-            <h3 class="font-bold text-lg text-success">Success</h3>
+            <h3 class="text-lg font-bold text-success">Success</h3>
             <p class="py-4">{{ session('status') }}</p>
             <div class="modal-action">
                 <form method="dialog">
@@ -315,7 +315,7 @@
 @if (session('error'))
     <dialog id="error_modal" class="modal modal-bottom sm:modal-middle" open>
         <div class="modal-box">
-            <h3 class="font-bold text-lg text-error">Error</h3>
+            <h3 class="text-lg font-bold text-error">Error</h3>
             <p class="py-4">{{ session('error') }}</p>
             <div class="modal-action">
                 <form method="dialog">
