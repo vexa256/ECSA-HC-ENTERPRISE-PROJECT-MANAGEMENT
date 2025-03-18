@@ -204,15 +204,15 @@ class CRFScoreBoardController extends Controller
                     }
                     // If still no rowErrors, proceed
                     if (empty($rowErrors)) {
-                        if (! isset($actualFloat)) {
+                        // that have already been normalized
+                        if ($responseType !== 'Yes/No' && $responseType !== 'Boolean') {
                             $actualFloat = floatval($actualValue);
-                        }
-                        if (! isset($targetFloat)) {
                             $targetFloat = floatval($targetValue);
                         }
 
+                        // Now check if target is zero for ratio-based scoring
                         if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
-                            $rowErrors[] = "Target=0 => cannot compute ratio with {$scoringLogic}";
+                            $rowErrors[] = "Target=0 => cannot compute ratio with " . $scoringLogic;
                         } else {
                             switch ($scoringLogic) {
                                 case 'greater_is_better':
@@ -697,14 +697,16 @@ class CRFScoreBoardController extends Controller
                         }
                     }
                     if (empty($rowErrors)) {
-                        if (! isset($actualFloat)) {
+                        // Only set these values if we're not dealing with Yes/No types
+                        // that have already been normalized
+                        if ($responseType !== 'Yes/No' && $responseType !== 'Boolean') {
                             $actualFloat = floatval($actualValue);
-                        }
-                        if (! isset($targetFloat)) {
                             $targetFloat = floatval($targetValue);
                         }
+
+                        // Now check if target is zero for ratio-based scoring
                         if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
-                            $rowErrors[] = "Target=0 => can't do ratio for {$scoringLogic}";
+                            $rowErrors[] = "Target=0 => cannot compute ratio with " . $scoringLogic;
                         } else {
                             switch ($scoringLogic) {
                                 case 'greater_is_better':
