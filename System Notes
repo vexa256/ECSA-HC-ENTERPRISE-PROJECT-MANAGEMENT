@@ -1,0 +1,1629 @@
+Thought for 1 second### Laravel Controller Structure for Performance Management System
+
+## 1. V3_TargetManagementController
+
+**Responsibilities:**
+
+- Manage year-specific targets for indicators
+- Handle target validation and consistency checks
+- Process target completeness reporting
+- Manage multi-year target configurations
+- Target year identification and validation
+- Year-specific target validation
+- Target consistency across years analysis
+
+
+**Key Functions:**
+
+- getTargetsByYear(year)
+- validateTargetCompleteness(clusterId, year)
+- checkTargetConsistency(currentYear, previousYear)
+- setClusterTargets(clusterId, indicatorId, targetYear, targetValue)
+- getTargetCompleteness(year)
+
+
+## 2. V3_PerformanceCalculationController
+
+**Responsibilities:**
+
+- Calculate indicator-level performance scores
+- Process strategic objective aggregation
+- Calculate weighted cluster scores
+- Implement performance categorization logic
+- Standardized performance categorization
+- Numerical score assignment
+- Strategic objective aggregation with performance categories
+- Weighted SO aggregation
+
+
+**Key Functions:**
+
+- calculateIndicatorScore(indicatorId, clusterId, reportingId)
+- calculateSOPerformance(soId, clusterId, reportingId)
+- calculateClusterScore(clusterId, reportingId)
+- getPerformanceCategory(achievementPercentage)
+- getWeightedClusterScore(clusterId, reportingId)
+
+
+## 3. V3_ReportingPeriodController
+
+**Responsibilities:**
+
+- Manage quarterly, bi-annual, and annual reporting periods
+- Handle period-specific data aggregation
+- Process multi-period consolidation
+- Quarterly performance with year focus
+- Dynamic bi-annual consolidation
+- Annual performance consolidation
+- Multi-period reporting with year-specific focus
+
+
+**Key Functions:**
+
+- getQuarterlyPerformance(clusterId, year)
+- consolidateBiAnnualPerformance(clusterId, halfYear, year)
+- consolidateAnnualPerformance(clusterId, year)
+- getReportingPeriods(year)
+- checkReportingCompleteness(clusterId, period, year)
+
+
+## 4. V3_DataQualityController
+
+**Responsibilities:**
+
+- Implement data validation rules
+- Process data quality assessments
+- Manage data completeness checks
+- Handle statistical outlier detection
+- Response validation against historical trends
+- Statistical outlier detection
+- Comment quality and verification requirements
+- Data completeness enforcement
+- Comprehensive data integrity enforcement
+
+
+**Key Functions:**
+
+- validateResponseData(clusterId, indicatorId, reportingId)
+- detectOutliers(clusterId, indicatorId, reportingId)
+- checkDataCompleteness(clusterId, reportingId)
+- validateAgainstHistoricalTrends(clusterId, indicatorId, reportingId)
+- assessCommentQuality(clusterId, indicatorId, reportingId)
+- getDataQualityReport(clusterId, reportingId)
+
+
+## 5. V3_PerformanceAnalyticsController
+
+**Responsibilities:**
+
+- Generate performance trend analysis
+- Process year-over-year comparisons
+- Calculate performance risk assessments
+- Manage performance alerts and notifications
+- Performance trajectory analysis
+- Year-over-year performance comparison
+- Performance risk assessment
+- Advanced performance analytics
+- Advanced reporting and visualization
+
+
+**Key Functions:**
+
+- analyzePerformanceTrajectory(clusterId, indicatorId, year)
+- compareYearOverYear(clusterId, currentYear, previousYear)
+- assessPerformanceRisk(clusterId, reportingId)
+- generatePerformanceAlerts(reportingId)
+- getPerformanceDashboardData(clusterId, period, year)
+- getTrendAnalysis(clusterId, indicatorId, startDate, endDate)
+
+
+Each controller is designed to be independent with clear responsibilities while collectively covering the entire performance management system functionality. The controllers follow Laravel naming conventions and are structured to work with MySQL 8 using Laravel's DB facade.
+
+
+
+Thought for 2 seconds### Enhanced Multi-Year Performance Scoring Framework for ECSA-HC PMS
+
+## 1. Dynamic Year-Based Target Selection
+
+### 1.1 Target Year Identification and Validation
+
+```sql
+-- Identify all available target years in the system
+SELECT DISTINCT Target_Year
+FROM cluster_indicator_targets
+ORDER BY Target_Year
+```
+
+```sql
+-- Select targets for the specific evaluation year
+SELECT cit.*
+FROM cluster_indicator_targets cit
+WHERE cit.ClusterID = [specific_cluster_id]
+AND cit.Target_Year = [evaluation_year]  -- Dynamic year parameter
+AND cit.Target_Value IS NOT NULL
+```
+
+### 1.2 Year-Specific Target Validation
+
+```sql
+-- Verify target completeness for the evaluation year
+SELECT c.ClusterID, c.Cluster_Name,
+       COUNT(DISTINCT i.IndicatorID) as Total_Required_Indicators,
+       COUNT(DISTINCT cit.IndicatorID) as Indicators_With_Targets,
+       (COUNT(DISTINCT cit.IndicatorID) * 100.0 / COUNT(DISTINCT i.IndicatorID)) as Target_Completeness
+FROM clusters c
+CROSS JOIN (SELECT DISTINCT IndicatorID FROM cluster_indicator_targets) i
+LEFT JOIN cluster_indicator_targets cit ON c.ClusterID = cit.ClusterID
+     AND i.IndicatorID = cit.IndicatorID
+     AND cit.Target_Year = [evaluation_year]
+GROUP BY c.ClusterID, c.Cluster_Name
+HAVING Target_Completeness < 100
+```
+
+Flag clusters with incomplete targets for the evaluation year.
+
+## 2. Enhanced Indicator-Level Scoring
+
+### 2.1 Standardized Performance Categorization
+
+For each indicator, calculate the achievement percentage and categorize:
+
+```sql
+SELECT
+    cpm.ClusterID,
+    cpm.IndicatorID,
+    cpm.Response as Actual_Value,
+    cit.Target_Value,
+    CASE
+        WHEN cpm.ResponseType = 'Number' THEN
+            CASE
+                WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) = 0 THEN 100
+                WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) > 0 THEN 100
+                ELSE (CAST(cpm.Response AS DECIMAL) / CAST(cit.Target_Value AS DECIMAL)) * 100
+            END
+        WHEN cpm.ResponseType IN ('Boolean', 'Yes/No') THEN
+            CASE
+                WHEN UPPER(cpm.Response) = UPPER(cit.Target_Value) THEN 100
+                ELSE 0
+            END
+        ELSE NULL -- For Text type, requires manual assessment
+    END as Achievement_Percentage,
+    CASE
+        WHEN Achievement_Percentage < 10 THEN 'Not Performing'
+        WHEN Achievement_Percentage >= 10 AND Achievement_Percentage < 50 THEN 'In Progress'
+        WHEN Achievement_Percentage >= 50 AND Achievement_Percentage < 90 THEN 'On Track'
+        WHEN Achievement_Percentage >= 90 THEN 'Met'
+        ELSE 'Not Assessed'
+    END as Performance_Category
+FROM cluster_performance_mappings cpm
+JOIN cluster_indicator_targets cit ON cpm.ClusterID = cit.ClusterID
+     AND cpm.IndicatorID = cit.IndicatorID
+WHERE cpm.ReportingID = [specific_reporting_id]
+AND cit.Target_Year = [evaluation_year]
+```
+
+### 2.2 Numerical Score Assignment
+
+Assign numerical scores based on performance categories for aggregation:
+
+```plaintext
+Not Performing (< 10%): Actual percentage (0-9.99)
+In Progress (10% to < 50%): Actual percentage (10-49.99)
+On Track (50% to < 90%): Actual percentage (50-89.99)
+Met (≥ 90%): Actual percentage (90-100)
+```
+
+Cap all scores at 100% even if performance exceeds target.
+
+## 3. Strategic Objective Aggregation with Performance Categories
+
+### 3.1 SO-Level Performance Categorization
+
+```sql
+SELECT
+    cpm.SO_ID,
+    AVG(Achievement_Percentage) as SO_Achievement_Percentage,
+    CASE
+        WHEN AVG(Achievement_Percentage) < 10 THEN 'Not Performing'
+        WHEN AVG(Achievement_Percentage) >= 10 AND AVG(Achievement_Percentage) < 50 THEN 'In Progress'
+        WHEN AVG(Achievement_Percentage) >= 50 AND AVG(Achievement_Percentage) < 90 THEN 'On Track'
+        WHEN AVG(Achievement_Percentage) >= 90 THEN 'Met'
+    END as SO_Performance_Category,
+    COUNT(cpm.IndicatorID) as Indicators_Count,
+    SUM(CASE WHEN Performance_Category = 'Not Performing' THEN 1 ELSE 0 END) as Not_Performing_Count,
+    SUM(CASE WHEN Performance_Category = 'In Progress' THEN 1 ELSE 0 END) as In_Progress_Count,
+    SUM(CASE WHEN Performance_Category = 'On Track' THEN 1 ELSE 0 END) as On_Track_Count,
+    SUM(CASE WHEN Performance_Category = 'Met' THEN 1 ELSE 0 END) as Met_Count
+FROM calculated_indicator_scores cis
+JOIN cluster_performance_mappings cpm ON cis.IndicatorID = cpm.IndicatorID
+     AND cis.ClusterID = cpm.ClusterID
+     AND cis.ReportingID = cpm.ReportingID
+WHERE cpm.ClusterID = [specific_cluster_id]
+AND cpm.ReportingID = [specific_reporting_id]
+GROUP BY cpm.SO_ID
+```
+
+### 3.2 Weighted SO Aggregation
+
+```sql
+-- Define Strategic Objective weights (can be stored in a configuration table)
+WITH so_weights AS (
+    SELECT 'SO1' as SO_ID, 0.15 as Weight
+    UNION SELECT 'SO2', 0.15
+    UNION SELECT 'SO3', 0.10
+    UNION SELECT 'SO4', 0.10
+    UNION SELECT 'SO5', 0.15
+    UNION SELECT 'SO6', 0.10
+    UNION SELECT 'SO7', 0.10
+    UNION SELECT 'SO8', 0.05
+    UNION SELECT 'SO9', 0.10
+)
+
+SELECT
+    c.ClusterID,
+    c.Cluster_Name,
+    SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) as Weighted_Cluster_Score,
+    CASE
+        WHEN SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) < 10 THEN 'Not Performing'
+        WHEN SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) >= 10
+             AND SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) < 50 THEN 'In Progress'
+        WHEN SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) >= 50
+             AND SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) < 90 THEN 'On Track'
+        WHEN SUM(so.SO_Achievement_Percentage * w.Weight) / SUM(w.Weight) >= 90 THEN 'Met'
+    END as Cluster_Performance_Category
+FROM clusters c
+JOIN strategic_objective_scores so ON c.ClusterID = so.ClusterID
+JOIN so_weights w ON so.SO_ID = w.SO_ID
+WHERE so.ReportingID = [specific_reporting_id]
+GROUP BY c.ClusterID, c.Cluster_Name
+```
+
+## 4. Multi-Period Reporting with Year-Specific Focus
+
+### 4.1 Quarterly Performance with Year Focus
+
+```sql
+SELECT
+    et.ReportName,
+    et.ReportingID,
+    c.ClusterID,
+    c.Cluster_Name,
+    ccs.Weighted_Cluster_Score,
+    ccs.Cluster_Performance_Category,
+    et.Year as Reporting_Year,
+    [evaluation_year] as Target_Year
+FROM ecsahc_timelines et
+JOIN clusters c ON 1=1
+JOIN calculated_cluster_scores ccs ON c.ClusterID = ccs.ClusterID
+     AND et.ReportingID = ccs.ReportingID
+WHERE et.Type = 'Quarterly Reports'
+AND et.Year = SUBSTRING([evaluation_year], 1, 4)  -- Extract year from target year range
+ORDER BY c.ClusterID, et.ClosingDate
+```
+
+### 4.2 Dynamic Bi-Annual Consolidation
+
+```sql
+WITH quarterly_scores AS (
+    SELECT
+        c.ClusterID,
+        c.Cluster_Name,
+        et.ReportingID,
+        et.ReportName,
+        ccs.Weighted_Cluster_Score,
+        ROW_NUMBER() OVER (PARTITION BY c.ClusterID, CASE
+            WHEN et.ReportName LIKE '%JULY TO SEPTEMBER%' OR et.ReportName LIKE '%OCTOBER TO DECEMBER%' THEN 1
+            WHEN et.ReportName LIKE '%JANUARY TO MARCH%' OR et.ReportName LIKE '%APRIL TO JUNE%' THEN 2
+        END ORDER BY et.ClosingDate) as Quarter_In_Half
+    FROM ecsahc_timelines et
+    JOIN clusters c ON 1=1
+    JOIN calculated_cluster_scores ccs ON c.ClusterID = ccs.ClusterID
+         AND et.ReportingID = ccs.ReportingID
+    WHERE et.Type = 'Quarterly Reports'
+    AND et.Year = SUBSTRING([evaluation_year], 1, 4)
+)
+
+SELECT
+    ClusterID,
+    Cluster_Name,
+    CASE
+        WHEN MIN(Quarter_In_Half) = 1 AND MAX(Quarter_In_Half) = 2 THEN
+            CASE
+                WHEN MIN(ReportName) LIKE '%JULY TO SEPTEMBER%' THEN 'July-December'
+                WHEN MIN(ReportName) LIKE '%JANUARY TO MARCH%' THEN 'January-June'
+            END
+        ELSE 'Incomplete Half'
+    END as Bi_Annual_Period,
+    AVG(Weighted_Cluster_Score) as Bi_Annual_Score,
+    CASE
+        WHEN AVG(Weighted_Cluster_Score) < 10 THEN 'Not Performing'
+        WHEN AVG(Weighted_Cluster_Score) >= 10 AND AVG(Weighted_Cluster_Score) < 50 THEN 'In Progress'
+        WHEN AVG(Weighted_Cluster_Score) >= 50 AND AVG(Weighted_Cluster_Score) < 90 THEN 'On Track'
+        WHEN AVG(Weighted_Cluster_Score) >= 90 THEN 'Met'
+    END as Bi_Annual_Performance_Category
+FROM quarterly_scores
+GROUP BY ClusterID, Cluster_Name, CASE
+    WHEN MIN(ReportName) LIKE '%JULY TO SEPTEMBER%' OR MIN(ReportName) LIKE '%OCTOBER TO DECEMBER%' THEN 1
+    WHEN MIN(ReportName) LIKE '%JANUARY TO MARCH%' OR MIN(ReportName) LIKE '%APRIL TO JUNE%' THEN 2
+END
+HAVING COUNT(DISTINCT Quarter_In_Half) = 2  -- Ensure both quarters in the half are present
+```
+
+### 4.3 Annual Performance Consolidation
+
+```sql
+SELECT
+    c.ClusterID,
+    c.Cluster_Name,
+    SUBSTRING([evaluation_year], 1, 4) as Year,
+    AVG(ccs.Weighted_Cluster_Score) as Annual_Score,
+    CASE
+        WHEN AVG(ccs.Weighted_Cluster_Score) < 10 THEN 'Not Performing'
+        WHEN AVG(ccs.Weighted_Cluster_Score) >= 10 AND AVG(ccs.Weighted_Cluster_Score) < 50 THEN 'In Progress'
+        WHEN AVG(ccs.Weighted_Cluster_Score) >= 50 AND AVG(ccs.Weighted_Cluster_Score) < 90 THEN 'On Track'
+        WHEN AVG(ccs.Weighted_Cluster_Score) >= 90 THEN 'Met'
+    END as Annual_Performance_Category,
+    COUNT(DISTINCT et.ReportingID) as Quarters_Reported,
+    CASE WHEN COUNT(DISTINCT et.ReportingID) = 4 THEN 'Complete' ELSE 'Incomplete' END as Data_Completeness
+FROM clusters c
+JOIN calculated_cluster_scores ccs ON c.ClusterID = ccs.ClusterID
+JOIN ecsahc_timelines et ON ccs.ReportingID = et.ReportingID
+WHERE et.Type = 'Quarterly Reports'
+AND et.Year = SUBSTRING([evaluation_year], 1, 4)
+GROUP BY c.ClusterID, c.Cluster_Name
+```
+
+## 5. Enhanced Data Quality and Validation Framework
+
+### 5.1 Target Consistency Across Years
+
+```sql
+SELECT
+    cit1.ClusterID,
+    cit1.IndicatorID,
+    cit1.Target_Year as Current_Year,
+    cit1.Target_Value as Current_Target,
+    cit2.Target_Year as Previous_Year,
+    cit2.Target_Value as Previous_Target,
+    CASE
+        WHEN cit1.ResponseType = 'Number' AND cit2.ResponseType = 'Number' THEN
+            ABS((CAST(cit1.Target_Value as DECIMAL) - CAST(cit2.Target_Value as DECIMAL)) /
+                NULLIF(CAST(cit2.Target_Value as DECIMAL), 0)) * 100
+        ELSE NULL
+    END as Target_Change_Percentage
+FROM cluster_indicator_targets cit1
+JOIN cluster_indicator_targets cit2 ON cit1.ClusterID = cit2.ClusterID
+     AND cit1.IndicatorID = cit2.IndicatorID
+WHERE cit1.Target_Year = [evaluation_year]
+AND cit2.Target_Year = [previous_year]
+AND cit1.ResponseType = 'Number'
+AND cit2.ResponseType = 'Number'
+HAVING Target_Change_Percentage > 50  -- Flag targets that changed by more than 50%
+```
+
+### 5.2 Response Validation Against Historical Trends
+
+```sql
+WITH historical_responses AS (
+    SELECT
+        cpm.ClusterID,
+        cpm.IndicatorID,
+        cpm.Response,
+        cpm.ResponseType,
+        et.ClosingDate,
+        ROW_NUMBER() OVER (PARTITION BY cpm.ClusterID, cpm.IndicatorID ORDER BY et.ClosingDate DESC) as recency_rank
+    FROM cluster_performance_mappings cpm
+    JOIN ecsahc_timelines et ON cpm.ReportingID = et.ReportingID
+    WHERE cpm.ResponseType = 'Number'
+    AND et.ClosingDate < (SELECT ClosingDate FROM ecsahc_timelines WHERE ReportingID = [specific_reporting_id])
+)
+
+SELECT
+    cpm.ClusterID,
+    cpm.IndicatorID,
+    cpm.Response as Current_Response,
+    hr.Response as Previous_Response,
+    CASE
+        WHEN cpm.ResponseType = 'Number' AND CAST(hr.Response as DECIMAL) != 0 THEN
+            ABS((CAST(cpm.Response as DECIMAL) - CAST(hr.Response as DECIMAL)) / CAST(hr.Response as DECIMAL)) * 100
+        ELSE NULL
+    END as Change_Percentage,
+    CASE
+        WHEN Change_Percentage > 100 THEN 'Significant Increase'
+        WHEN Change_Percentage < -50 THEN 'Significant Decrease'
+        ELSE 'Within Normal Range'
+    END as Trend_Flag
+FROM cluster_performance_mappings cpm
+LEFT JOIN historical_responses hr ON cpm.ClusterID = hr.ClusterID
+     AND cpm.IndicatorID = hr.IndicatorID
+     AND hr.recency_rank = 1
+WHERE cpm.ReportingID = [specific_reporting_id]
+AND cpm.ResponseType = 'Number'
+HAVING Trend_Flag IN ('Significant Increase', 'Significant Decrease')
+```
+
+### 5.3 Statistical Outlier Detection
+
+```sql
+WITH indicator_stats AS (
+    SELECT
+        IndicatorID,
+        AVG(CAST(Response as DECIMAL)) as avg_value,
+        STDEV(CAST(Response as DECIMAL)) as std_dev
+    FROM cluster_performance_mappings
+    WHERE ResponseType = 'Number'
+    GROUP BY IndicatorID
+)
+
+SELECT
+    cpm.ClusterID,
+    cpm.IndicatorID,
+    cpm.Response,
+    is.avg_value,
+    is.std_dev,
+    (CAST(cpm.Response as DECIMAL) - is.avg_value) / NULLIF(is.std_dev, 0) as z_score
+FROM cluster_performance_mappings cpm
+JOIN indicator_stats is ON cpm.IndicatorID = is.IndicatorID
+WHERE cpm.ReportingID = [specific_reporting_id]
+AND cpm.ResponseType = 'Number'
+AND ABS((CAST(cpm.Response as DECIMAL) - is.avg_value) / NULLIF(is.std_dev, 0)) > 2  -- Flag values more than 2 standard deviations from mean
+```
+
+### 5.4 Comment Quality and Verification Requirements
+
+```sql
+SELECT
+    cpm.ClusterID,
+    cpm.IndicatorID,
+    cpm.Response,
+    cpm.ReportingComment,
+    CASE
+        WHEN LENGTH(cpm.ReportingComment) < 20 THEN 'Insufficient'
+        WHEN LENGTH(cpm.ReportingComment) BETWEEN 20 AND 100 THEN 'Basic'
+        WHEN LENGTH(cpm.ReportingComment) > 100 THEN 'Detailed'
+    END as Comment_Quality,
+    CASE
+        -- Require verification for significant changes
+        WHEN ABS((CAST(cpm.Response as DECIMAL) - CAST(prev.Response as DECIMAL)) / NULLIF(CAST(prev.Response as DECIMAL), 0)) * 100 > 50 THEN 'Verification Required'
+        -- Require verification for high performance
+        WHEN (CAST(cpm.Response as DECIMAL) / CAST(cit.Target_Value as DECIMAL)) * 100 > 120 THEN 'Verification Required'
+        -- Require verification for very low performance
+        WHEN (CAST(cpm.Response as DECIMAL) / CAST(cit.Target_Value as DECIMAL)) * 100 < 5 THEN 'Verification Required'
+        ELSE 'Standard Review'
+    END as Verification_Level
+FROM cluster_performance_mappings cpm
+JOIN cluster_indicator_targets cit ON cpm.ClusterID = cit.ClusterID
+     AND cpm.IndicatorID = cit.IndicatorID
+LEFT JOIN (
+    SELECT cpm2.ClusterID, cpm2.IndicatorID, cpm2.Response
+    FROM cluster_performance_mappings cpm2
+    JOIN ecsahc_timelines et ON cpm2.ReportingID = et.ReportingID
+    WHERE et.ClosingDate = (
+        SELECT MAX(et2.ClosingDate)
+        FROM ecsahc_timelines et2
+        JOIN cluster_performance_mappings cpm3 ON et2.ReportingID = cpm3.ReportingID
+        WHERE cpm3.ClusterID = cpm2.ClusterID
+        AND cpm3.IndicatorID = cpm2.IndicatorID
+        AND et2.ClosingDate < (SELECT ClosingDate FROM ecsahc_timelines WHERE ReportingID = [specific_reporting_id])
+    )
+) prev ON cpm.ClusterID = prev.ClusterID AND cpm.IndicatorID = prev.IndicatorID
+WHERE cpm.ReportingID = [specific_reporting_id]
+AND cpm.ResponseType = 'Number'
+AND cit.Target_Year = [evaluation_year]
+```
+
+### 5.5 Data Completeness Enforcement
+
+```sql
+-- Create a temporary table of all required indicator submissions
+CREATE TEMPORARY TABLE required_submissions AS
+SELECT
+    c.ClusterID,
+    cit.IndicatorID,
+    [specific_reporting_id] as ReportingID
+FROM clusters c
+JOIN cluster_indicator_targets cit ON c.ClusterID = cit.ClusterID
+WHERE cit.Target_Year = [evaluation_year]
+AND c.id IN (SELECT DISTINCT ClusterID FROM cluster_performance_mappings WHERE ReportingID = [specific_reporting_id]);
+
+-- Identify missing submissions
+SELECT
+    rs.ClusterID,
+    c.Cluster_Name,
+    rs.IndicatorID,
+    'Missing Data' as Status
+FROM required_submissions rs
+LEFT JOIN cluster_performance_mappings cpm ON rs.ClusterID = cpm.ClusterID
+     AND rs.IndicatorID = cpm.IndicatorID
+     AND rs.ReportingID = cpm.ReportingID
+JOIN clusters c ON rs.ClusterID = c.ClusterID
+WHERE cpm.id IS NULL
+```
+
+## 6. Advanced Performance Analytics
+
+### 6.1 Performance Trajectory Analysis
+
+```sql
+WITH quarterly_performance AS (
+    SELECT
+        cpm.ClusterID,
+        cpm.IndicatorID,
+        et.ReportName,
+        et.ClosingDate,
+        cpm.Response,
+        cit.Target_Value,
+        CASE
+            WHEN cpm.ResponseType = 'Number' THEN
+                CASE
+                    WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) = 0 THEN 100
+                    WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) > 0 THEN 100
+                    ELSE (CAST(cpm.Response AS DECIMAL) / CAST(cit.Target_Value AS DECIMAL)) * 100
+                END
+            ELSE NULL
+        END as Achievement_Percentage,
+        ROW_NUMBER() OVER (PARTITION BY cpm.ClusterID, cpm.IndicatorID ORDER BY et.ClosingDate) as quarter_num
+    FROM cluster_performance_mappings cpm
+    JOIN ecsahc_timelines et ON cpm.ReportingID = et.ReportingID
+    JOIN cluster_indicator_targets cit ON cpm.ClusterID = cit.ClusterID
+         AND cpm.IndicatorID = cit.IndicatorID
+    WHERE et.Year = SUBSTRING([evaluation_year], 1, 4)
+    AND cit.Target_Year = [evaluation_year]
+    AND cpm.ResponseType = 'Number'
+)
+
+SELECT
+    qp1.ClusterID,
+    qp1.IndicatorID,
+    qp1.Achievement_Percentage as Q1_Achievement,
+    qp2.Achievement_Percentage as Q2_Achievement,
+    qp3.Achievement_Percentage as Q3_Achievement,
+    qp4.Achievement_Percentage as Q4_Achievement,
+    -- Calculate linear regression slope to determine trajectory
+    CASE
+        WHEN COUNT(*) >= 3 THEN  -- Need at least 3 data points for meaningful trend
+            REGR_SLOPE(Achievement_Percentage, quarter_num) OVER (PARTITION BY ClusterID, IndicatorID)
+        ELSE NULL
+    END as Trend_Slope,
+    CASE
+        WHEN Trend_Slope > 5 THEN 'Strong Improvement'
+        WHEN Trend_Slope BETWEEN 1 AND 5 THEN 'Moderate Improvement'
+        WHEN Trend_Slope BETWEEN -1 AND 1 THEN 'Stable'
+        WHEN Trend_Slope BETWEEN -5 AND -1 THEN 'Moderate Decline'
+        WHEN Trend_Slope < -5 THEN 'Significant Decline'
+        ELSE 'Insufficient Data'
+    END as Performance_Trajectory
+FROM quarterly_performance qp1
+LEFT JOIN quarterly_performance qp2 ON qp1.ClusterID = qp2.ClusterID
+     AND qp1.IndicatorID = qp2.IndicatorID
+     AND qp2.quarter_num = 2
+LEFT JOIN quarterly_performance qp3 ON qp1.ClusterID = qp3.ClusterID
+     AND qp1.IndicatorID = qp3.IndicatorID
+     AND qp3.quarter_num = 3
+LEFT JOIN quarterly_performance qp4 ON qp1.ClusterID = qp4.ClusterID
+     AND qp1.IndicatorID = qp4.IndicatorID
+     AND qp4.quarter_num = 4
+WHERE qp1.quarter_num = 1
+```
+
+### 6.2 Year-over-Year Performance Comparison
+
+```sql
+WITH current_year_performance AS (
+    SELECT
+        cpm.ClusterID,
+        cpm.IndicatorID,
+        AVG(CASE
+            WHEN cpm.ResponseType = 'Number' THEN
+                CASE
+                    WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) = 0 THEN 100
+                    WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) > 0 THEN 100
+                    ELSE (CAST(cpm.Response AS DECIMAL) / CAST(cit.Target_Value AS DECIMAL)) * 100
+                END
+            ELSE NULL
+        END) as Avg_Achievement_Percentage
+    FROM cluster_performance_mappings cpm
+    JOIN ecsahc_timelines et ON cpm.ReportingID = et.ReportingID
+    JOIN cluster_indicator_targets cit ON cpm.ClusterID = cit.ClusterID
+         AND cpm.IndicatorID = cit.IndicatorID
+    WHERE et.Year = SUBSTRING([evaluation_year], 1, 4)
+    AND cit.Target_Year = [evaluation_year]
+    AND cpm.ResponseType = 'Number'
+    GROUP BY cpm.ClusterID, cpm.IndicatorID
+),
+previous_year_performance AS (
+    SELECT
+        cpm.ClusterID,
+        cpm.IndicatorID,
+        AVG(CASE
+            WHEN cpm.ResponseType = 'Number' THEN
+                CASE
+                    WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) = 0 THEN 100
+                    WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) > 0 THEN 100
+                    ELSE (CAST(cpm.Response AS DECIMAL) / CAST(cit.Target_Value AS DECIMAL)) * 100
+                END
+            ELSE NULL
+        END) as Avg_Achievement_Percentage
+    FROM cluster_performance_mappings cpm
+    JOIN ecsahc_timelines et ON cpm.ReportingID = et.ReportingID
+    JOIN cluster_indicator_targets cit ON cpm.ClusterID = cit.ClusterID
+         AND cpm.IndicatorID = cit.IndicatorID
+    WHERE et.Year = CAST(SUBSTRING([evaluation_year], 1, 4) AS INT) - 1
+    AND cit.Target_Year = [previous_year]
+    AND cpm.ResponseType = 'Number'
+    GROUP BY cpm.ClusterID, cpm.IndicatorID
+)
+
+SELECT
+    c.ClusterID,
+    c.Cluster_Name,
+    cyp.Avg_Achievement_Percentage as Current_Year_Performance,
+    pyp.Avg_Achievement_Percentage as Previous_Year_Performance,
+    (cyp.Avg_Achievement_Percentage - pyp.Avg_Achievement_Percentage) as Performance_Change,
+    CASE
+        WHEN (cyp.Avg_Achievement_Percentage - pyp.Avg_Achievement_Percentage) > 20 THEN 'Significant Improvement'
+        WHEN (cyp.Avg_Achievement_Percentage - pyp.Avg_Achievement_Percentage) BETWEEN 5 AND 20 THEN 'Moderate Improvement'
+        WHEN (cyp.Avg_Achievement_Percentage - pyp.Avg_Achievement_Percentage) BETWEEN -5 AND 5 THEN 'Stable'
+        WHEN (cyp.Avg_Achievement_Percentage - pyp.Avg_Achievement_Percentage) BETWEEN -20 AND -5 THEN 'Moderate Decline'
+        WHEN (cyp.Avg_Achievement_Percentage - pyp.Avg_Achievement_Percentage) < -20 THEN 'Significant Decline'
+        ELSE 'Insufficient Data'
+    END as YoY_Performance_Trend
+FROM clusters c
+JOIN current_year_performance cyp ON c.ClusterID = cyp.ClusterID
+LEFT JOIN previous_year_performance pyp ON c.ClusterID = pyp.ClusterID
+     AND cyp.IndicatorID = pyp.IndicatorID
+```
+
+### 6.3 Performance Risk Assessment
+
+```sql
+SELECT
+    c.ClusterID,
+    c.Cluster_Name,
+    COUNT(DISTINCT cpm.IndicatorID) as Total_Indicators,
+    SUM(CASE WHEN Performance_Category = 'Not Performing' THEN 1 ELSE 0 END) as Not_Performing_Count,
+    SUM(CASE WHEN Performance_Category = 'In Progress' THEN 1 ELSE 0 END) as In_Progress_Count,
+    SUM(CASE WHEN Performance_Category = 'On Track' THEN 1 ELSE 0 END) as On_Track_Count,
+    SUM(CASE WHEN Performance_Category = 'Met' THEN 1 ELSE 0 END) as Met_Count,
+    (SUM(CASE WHEN Performance_Category = 'Not Performing' THEN 1 ELSE 0 END) * 100.0 / COUNT(DISTINCT cpm.IndicatorID)) as Not_Performing_Percentage,
+    CASE
+        WHEN (Not_Performing_Percentage > 30) THEN 'High Risk'
+        WHEN (Not_Performing_Percentage BETWEEN 15 AND 30) THEN 'Medium Risk'
+        WHEN (Not_Performing_Percentage < 15) THEN 'Low Risk'
+    END as Performance_Risk_Level,
+    -- Calculate risk trend based on previous quarter
+    CASE
+        WHEN Current_Not_Performing_Percentage > Previous_Not_Performing_Percentage THEN 'Increasing Risk'
+        WHEN Current_Not_Performing_Percentage < Previous_Not_Performing_Percentage THEN 'Decreasing Risk'
+        ELSE 'Stable Risk'
+    END as Risk_Trend
+FROM clusters c
+JOIN calculated_indicator_scores cis ON c.ClusterID = cis.ClusterID
+JOIN cluster_performance_mappings cpm ON cis.IndicatorID = cpm.IndicatorID
+     AND cis.ClusterID = cpm.ClusterID
+     AND cis.ReportingID = cpm.ReportingID
+LEFT JOIN (
+    SELECT
+        c.ClusterID,
+        (SUM(CASE WHEN prev_perf.Performance_Category = 'Not Performing' THEN 1 ELSE 0 END) * 100.0 / COUNT(DISTINCT prev_perf.IndicatorID)) as Previous_Not_Performing_Percentage
+    FROM clusters c
+    JOIN calculated_indicator_scores prev_perf ON c.ClusterID = prev_perf.ClusterID
+    WHERE prev_perf.ReportingID = [previous_reporting_id]
+    GROUP BY c.ClusterID
+) prev ON c.ClusterID = prev.ClusterID
+WHERE cpm.ReportingID = [specific_reporting_id]
+GROUP BY c.ClusterID, c.Cluster_Name, prev.Previous_Not_Performing_Percentage
+```
+
+## 7. Comprehensive Data Integrity Enforcement
+
+### 7.1 Automated Data Validation Rules
+
+Implement the following validation rules in the data entry interface:
+
+1. **Range Validation**:
+
+1. Numeric responses must be within ±200% of target value unless explicitly justified
+2. Boolean/Yes-No responses must match expected format
+3. Text responses must be at least 20 characters
+
+
+
+2. **Cross-Field Validation**:
+
+1. Ensure consistency between response and comment (e.g., if response is 0, comment must explain why)
+2. If performance is <10% or >150% of target, mandatory detailed explanation required
+
+
+
+3. **Temporal Validation**:
+
+1. Quarter-over-quarter changes >50% require mandatory verification and explanation
+2. Year-over-year changes >100% require executive approval
+
+
+
+
+
+### 7.2 Multi-Level Approval Workflow
+
+Implement a hierarchical approval process:
+
+1. **Level 1: Data Entry** - Initial submission by cluster staff
+2. **Level 2: Cluster Review** - Validation by cluster head
+3. **Level 3: Quality Assurance** - Review by M&E team for:
+
+1. Statistical anomalies
+2. Consistency with historical data
+3. Completeness of reporting
+
+
+
+4. **Level 4: Executive Approval** - Final sign-off for:
+
+1. High-risk indicators
+2. Significant performance deviations
+3. Strategic objective-level performance
+
+
+
+
+
+### 7.3 Comprehensive Audit Trail
+
+```sql
+CREATE TABLE performance_data_audit (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    table_name VARCHAR(100) NOT NULL,
+    record_id BIGINT NOT NULL,
+    field_name VARCHAR(100) NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    change_type ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    change_reason TEXT,
+    changed_by VARCHAR(255) NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reporting_id VARCHAR(255),
+    verification_status ENUM('Pending', 'Verified', 'Rejected') DEFAULT 'Pending'
+);
+```
+
+Track all changes to performance data with justification and approval status.
+
+### 7.4 Data Reconciliation Process
+
+Implement quarterly data reconciliation:
+
+1. **Automated Checks**:
+
+```sql
+-- Identify data inconsistencies across reporting periods
+SELECT
+    cpm1.ClusterID,
+    cpm1.IndicatorID,
+    et1.ReportName as Report1,
+    cpm1.Response as Response1,
+    et2.ReportName as Report2,
+    cpm2.Response as Response2,
+    ABS(CAST(cpm1.Response as DECIMAL) - CAST(cpm2.Response as DECIMAL)) as Absolute_Difference,
+    (ABS(CAST(cpm1.Response as DECIMAL) - CAST(cpm2.Response as DECIMAL)) /
+        NULLIF(CAST(cpm1.Response as DECIMAL), 0)) * 100 as Percentage_Difference
+FROM cluster_performance_mappings cpm1
+JOIN ecsahc_timelines et1 ON cpm1.ReportingID = et1.ReportingID
+JOIN cluster_performance_mappings cpm2 ON cpm1.ClusterID = cpm2.ClusterID
+     AND cpm1.IndicatorID = cpm2.IndicatorID
+JOIN ecsahc_timelines et2 ON cpm2.ReportingID = et2.ReportingID
+WHERE cpm1.ResponseType = 'Number'
+AND cpm2.ResponseType = 'Number'
+AND et1.Year = et2.Year
+AND et1.ReportingID != et2.ReportingID
+AND (ABS(CAST(cpm1.Response as DECIMAL) - CAST(cpm2.Response as DECIMAL)) /
+        NULLIF(CAST(cpm1.Response as DECIMAL), 0)) * 100 > 30
+```
+
+
+2. **Manual Verification**:
+
+1. Establish a quarterly data review committee
+2. Review all flagged inconsistencies
+3. Document resolution decisions
+
+
+
+3. **Correction Protocol**:
+
+1. Implement formal process for retroactive data corrections
+2. Require documentation of reason for change
+3. Maintain original and corrected values in audit trail
+
+
+
+
+
+## 8. Advanced Reporting and Visualization
+
+### 8.1 Performance Dashboard with Drill-Down Capability
+
+Create a multi-level dashboard:
+
+1. **Executive Level**:
+
+1. Overall organizational performance by strategic objective
+2. Year-to-date progress against annual targets
+3. Performance risk distribution
+
+
+
+2. **Cluster Level**:
+
+1. Detailed cluster performance by strategic objective
+2. Quarter-over-quarter and year-over-year trends
+3. Performance category distribution
+
+
+
+3. **Indicator Level**:
+
+1. Individual indicator performance against targets
+2. Historical performance trend
+3. Peer comparison across clusters (where applicable)
+
+
+
+
+
+### 8.2 Automated Performance Alerts
+
+Implement an alert system for:
+
+1. **Critical Underperformance**:
+
+1. Indicators below 10% of target for two consecutive quarters
+2. Strategic objectives with >30% of indicators in "Not Performing" category
+
+
+
+2. **Data Quality Issues**:
+
+1. Missing data for mandatory indicators
+2. Statistical outliers requiring verification
+3. Inconsistent reporting patterns
+
+
+
+3. **Positive Recognition**:
+
+1. Clusters achieving >90% of targets
+2. Most improved indicators quarter-over-quarter
+3. Strategic objectives exceeding annual targets
+
+
+
+
+
+## 9. Implementation Recommendations
+
+1. **Phased Approach**:
+
+1. Begin with core scoring logic and basic data validation
+2. Add advanced analytics and multi-period reporting in second phase
+3. Implement comprehensive data quality framework in final phase
+
+
+
+2. **Technical Infrastructure**:
+
+1. Implement stored procedures for consistent calculation logic
+2. Create materialized views for performance reporting
+3. Establish automated ETL processes for data aggregation
+
+
+
+3. **Governance Structure**:
+
+1. Establish a data governance committee
+2. Define clear roles and responsibilities for data quality
+3. Implement regular performance review meetings
+
+
+
+4. **Capacity Building**:
+
+1. Train all users on performance measurement methodology
+2. Provide detailed documentation on scoring algorithms
+3. Conduct regular refresher training on data quality standards
+
+
+
+
+
+This comprehensive framework ensures accurate, consistent evaluation of performance across all levels of the organization while maintaining data quality and enabling meaningful analysis for decision-making. The dynamic year-based approach allows the system to scale as the organization's performance measurement needs evolve over time.
+
+
+
+CREATE TABLE `clusters` (
+  `id` bigint UNSIGNED NOT NULL,
+  `Description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Cluster_Name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `ClusterID` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `clusters`
+--
+
+INSERT INTO `clusters` (`id`, `Description`, `Cluster_Name`, `created_at`, `updated_at`, `ClusterID`) VALUES
+(19, 'HSCD', 'HSCD', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'HSCD'),
+(20, 'PI Thanzi', 'PI Thanzi', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'PI Thanzi'),
+(21, 'HEPRR-MPA', 'HEPRR-MPA', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'HEPRR-MPA'),
+(22, 'FHID', 'FHID', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'FHID'),
+(23, 'KMME', 'KMME', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'KMME'),
+(24, 'COSECSA', 'COSECSA', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'COSECSA'),
+(25, 'CANECSA', 'CANECSA', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'CANECSA'),
+(26, 'ECSACONM', 'ECSACONM', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'ECSACONM'),
+(27, 'ECSACOG', 'ECSACOG', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'ECSACOG'),
+(28, 'NFSN', 'NFSN', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'NFSN'),
+(29, 'GLOBAL FUND TB PROJECT', 'GLOBAL FUND TB PROJECT', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'GLOBAL FUND TB PROJECT'),
+(30, 'All clusters/projects', 'All clusters/projects', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'All clusters/projects'),
+(31, 'ECSA-HC CORPORATE', 'ECSA-HC CORPORATE', '2025-02-14 20:03:11', '2025-02-14 20:03:11', 'ECSA-HC CORPORATE'),
+(32, 'ILSS', 'ILSS', '2025-02-14 20:08:59', '2025-02-14 20:08:59', 'ILSS'),
+(33, 'TB Lab Project', 'TB Lab Project', NULL, NULL, '34c81672a4436e0790f1f91a7940c0ba');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cluster_indicator_targets`
+--
+
+CREATE TABLE `cluster_indicator_targets` (
+  `id` bigint UNSIGNED NOT NULL,
+  `ClusterTargetID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ClusterID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `IndicatorID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Target_Year` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Target_Value` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ResponseType` enum('Text','Number','Boolean','Yes/No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `Baseline2024` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `cluster_indicator_targets`
+--
+
+INSERT INTO `cluster_indicator_targets` (`id`, `ClusterTargetID`, `ClusterID`, `IndicatorID`, `Target_Year`, `Target_Value`, `ResponseType`, `created_at`, `updated_at`, `Baseline2024`) VALUES
+(1, 'target_67d401b8066040.89727495', 'GLOBAL FUND TB PROJECT', '94', '2024-2025', '29', 'Number', '2025-03-14 09:15:20', '2025-03-14 09:51:50', NULL),
+(2, 'target_67d4026f313828.87313324', 'GLOBAL FUND TB PROJECT', '101', '2024-2025', '2', 'Number', '2025-03-14 09:18:23', '2025-03-14 09:52:13', NULL),
+(3, 'target_67d4030c864035.00402160', 'GLOBAL FUND TB PROJECT', '112', '2024-2025', '21', 'Number', '2025-03-14 09:21:00', '2025-03-14 09:53:27', NULL),
+(4, 'target_67d4031e7b3933.35121296', 'GLOBAL FUND TB PROJECT', '0', '2024-2025', '1', 'Number', '2025-03-14 09:21:18', '2025-03-14 09:54:42', NULL),
+(5, 'target_67d4041b478a25.69051589', 'GLOBAL FUND TB PROJECT', '130', '2024-2025', '18', 'Number', '2025-03-14 09:25:31', '2025-03-14 09:53:51', NULL),
+(6, 'target_67d4043a23c673.14024688', 'GLOBAL FUND TB PROJECT', '134', '2024-2025', '17', 'Number', '2025-03-14 09:26:02', '2025-03-14 09:54:02', NULL),
+(7, 'target_67d40449d02533.04270717', 'GLOBAL FUND TB PROJECT', '135', '2024-2025', '21', 'Number', '2025-03-14 09:26:17', '2025-03-14 09:54:13', NULL),
+(8, 'target_67d40452af9e10.74489452', 'GLOBAL FUND TB PROJECT', '136', '2024-2025', '21', 'Number', '2025-03-14 09:26:26', '2025-03-14 09:54:23', NULL),
+(9, 'target_67d421a3061e52.11856285', 'COSECSA', '94', '2024-2025', '175', 'Number', '2025-03-14 11:31:31', '2025-03-14 11:31:31', NULL),
+(10, 'target_67d421b9c811a0.96112924', 'COSECSA', '95', '2024-2025', '1200', 'Number', '2025-03-14 11:31:53', '2025-03-14 11:31:53', NULL),
+(12, 'target_67d4227b2e1c69.76305480', 'COSECSA', '96', '2024-2025', '1600', 'Number', '2025-03-14 11:35:07', '2025-03-14 11:35:07', NULL),
+(13, 'target_67d424f62c3d47.10849303', 'COSECSA', '98', '2024-2025', '252', 'Number', '2025-03-14 11:45:42', '2025-03-14 11:45:42', NULL),
+(14, 'target_67d42506150096.28539762', 'COSECSA', '100', '2024-2025', '80', 'Number', '2025-03-14 11:45:58', '2025-03-14 11:45:58', NULL),
+(15, 'target_67d42517a0b2f8.61116503', 'COSECSA', '101', '2024-2025', '7', 'Number', '2025-03-14 11:46:15', '2025-03-14 11:46:15', NULL),
+(16, 'target_67d42542526de1.54728232', 'COSECSA', '102', '2024-2025', '120000', 'Number', '2025-03-14 11:46:58', '2025-03-14 11:46:58', NULL),
+(17, 'target_67d42581e23de8.58426448', 'COSECSA', '103', '2024-2025', '3', 'Number', '2025-03-14 11:48:01', '2025-03-14 11:48:01', NULL),
+(18, 'target_67d425da1fbae8.68552400', 'COSECSA', '110', '2024-2025', '7', 'Number', '2025-03-14 11:49:30', '2025-03-14 11:49:30', NULL),
+(19, 'target_67d4260bec2483.18519592', 'COSECSA', '116', '2024-2025', '14', 'Number', '2025-03-14 11:50:19', '2025-03-14 11:50:19', NULL),
+(20, 'target_67d42fd5d8dd48.71770716', 'COSECSA', '137', '2024-2025', '12', 'Number', '2025-03-14 12:32:05', '2025-03-14 12:32:05', NULL),
+(21, 'target_67d430015aeaa5.11156550', 'COSECSA', '138', '2024-2025', '4', 'Number', '2025-03-14 12:32:49', '2025-03-14 12:32:49', NULL),
+(22, 'target_67d434b08f3447.89875340', 'COSECSA', '139', '2024-2025', '20000', 'Number', '2025-03-14 12:52:48', '2025-03-14 12:52:48', NULL),
+(23, 'target_67d434c7584664.58497488', 'COSECSA', '141', '2024-2025', '55', 'Number', '2025-03-14 12:53:11', '2025-03-14 12:53:11', NULL),
+(24, 'target_67d435575c4977.07132076', 'COSECSA', '142', '2024-2025', '100', 'Number', '2025-03-14 12:55:35', '2025-03-14 12:55:35', NULL),
+(25, 'target_67d435f65ce770.99593476', 'COSECSA', '143', '2024-2025', '10', 'Number', '2025-03-14 12:58:14', '2025-03-14 12:58:14', NULL),
+(26, 'target_67d4360bc17076.30686169', 'COSECSA', '145', '2024-2025', '7', 'Number', '2025-03-14 12:58:35', '2025-03-14 12:58:35', NULL),
+(27, 'target_67d436ec258627.39687080', 'COSECSA', '0', '2024-2025', '3', 'Number', '2025-03-14 13:02:20', '2025-03-14 13:32:02', NULL),
+(28, 'target_67d437209022e9.29396144', 'COSECSA', '154', '2024-2025', '5', 'Number', '2025-03-14 13:03:12', '2025-03-14 13:03:12', NULL),
+(29, 'target_67d4375be7ff34.62922545', 'COSECSA', '169', '2024-2025', '3', 'Number', '2025-03-14 13:04:11', '2025-03-14 13:04:11', NULL),
+(30, 'target_67d4379cf09507.71044971', 'COSECSA', '170', '2024-2025', '50000', 'Number', '2025-03-14 13:05:16', '2025-03-14 13:05:16', NULL),
+(31, 'target_67d43ebf09be68.36383689', 'COSECSA', '97', '2024-2025', '150', 'Number', '2025-03-14 13:35:43', '2025-03-14 13:35:43', NULL),
+(32, 'target_67d44f8ee117e8.32745641', 'HSCD', '94', '2024-2025', '90', 'Number', '2025-03-14 14:47:26', '2025-03-14 14:47:26', NULL),
+(33, 'target_67d44f9f735459.55394772', 'HSCD', '0', '2024-2025', '2', 'Number', '2025-03-14 14:47:43', '2025-03-14 14:49:23', NULL),
+(34, 'target_67d44fae2ebb73.98354691', 'HSCD', '106', '2024-2025', '2', 'Number', '2025-03-14 14:47:58', '2025-03-14 14:47:58', NULL),
+(35, 'target_67d44fc0d165f7.95036335', 'HSCD', '107', '2024-2025', '1', 'Number', '2025-03-14 14:48:16', '2025-03-14 14:48:16', NULL),
+(36, 'target_67d44fd26785e6.46504062', 'HSCD', '110', '2024-2025', '1', 'Number', '2025-03-14 14:48:34', '2025-03-14 14:48:34', NULL),
+(37, 'target_67d4501209f022.70560261', 'HSCD', '137', '2024-2025', '1', 'Number', '2025-03-14 14:49:38', '2025-03-14 14:49:38', NULL),
+(38, 'target_67d4501edc4458.66170935', 'HSCD', '143', '2024-2025', '1', 'Number', '2025-03-14 14:49:50', '2025-03-14 14:49:50', NULL),
+(39, 'target_67d4502cd94325.12701932', 'HSCD', '145', '2024-2025', '2', 'Number', '2025-03-14 14:50:04', '2025-03-14 14:50:04', NULL),
+(40, 'target_67d469082e4c45.04524655', 'HEPRR-MPA', '94', '2024-2025', '250', 'Number', '2025-03-14 16:36:08', '2025-03-14 16:36:08', NULL),
+(41, 'target_67d4691c6107f3.14022994', 'HEPRR-MPA', '96', '2024-2025', '100', 'Number', '2025-03-14 16:36:28', '2025-03-14 16:36:28', NULL),
+(42, 'target_67d4692f427c57.73222121', 'HEPRR-MPA', '101', '2024-2025', '8', 'Number', '2025-03-14 16:36:47', '2025-03-14 16:36:47', NULL),
+(43, 'target_67d469a2c4a4d3.70947383', 'HEPRR-MPA', '103', '2024-2025', '2', 'Number', '2025-03-14 16:38:42', '2025-03-14 16:38:42', NULL),
+(44, 'target_67d469bc9df513.38115878', 'HEPRR-MPA', '106', '2024-2025', '12', 'Number', '2025-03-14 16:39:08', '2025-03-14 16:39:08', NULL),
+(45, 'target_67d469ca0b3df4.20500915', 'HEPRR-MPA', '107', '2024-2025', '4', 'Number', '2025-03-14 16:39:22', '2025-03-14 16:39:22', NULL),
+(46, 'target_67d469dd25be68.99426544', 'HEPRR-MPA', '110', '2024-2025', '7', 'Number', '2025-03-14 16:39:41', '2025-03-14 16:39:41', NULL),
+(47, 'target_67d469ea3d3669.81304560', 'HEPRR-MPA', '112', '2024-2025', '5', 'Number', '2025-03-14 16:39:54', '2025-03-14 16:39:54', NULL),
+(48, 'target_67d46a8255eee9.46710260', 'HEPRR-MPA', '0', '2024-2025', '2', 'Number', '2025-03-14 16:42:26', '2025-03-14 16:42:36', NULL),
+(49, 'target_67d46a9d87ec13.34936885', 'HEPRR-MPA', '127', '2024-2025', '4', 'Number', '2025-03-14 16:42:53', '2025-03-14 16:42:53', NULL),
+(50, 'target_67d46aaeea9781.46529820', 'HEPRR-MPA', '128', '2024-2025', '2', 'Number', '2025-03-14 16:43:10', '2025-03-14 16:43:10', NULL),
+(51, 'target_67d46abd57b370.62005763', 'HEPRR-MPA', '129', '2024-2025', '4', 'Number', '2025-03-14 16:43:25', '2025-03-14 16:43:25', NULL),
+(52, 'target_67d46ad74b2fb0.94748540', 'HEPRR-MPA', '130', '2024-2025', '0', 'Number', '2025-03-14 16:43:51', '2025-03-14 16:43:51', NULL),
+(53, 'target_67d46ae50ae7c7.61986757', 'HEPRR-MPA', '131', '2024-2025', '4', 'Number', '2025-03-14 16:44:05', '2025-03-14 16:44:05', NULL),
+(54, 'target_67d46af5383d74.25568137', 'HEPRR-MPA', '132', '2024-2025', '0', 'Number', '2025-03-14 16:44:21', '2025-03-14 16:44:21', NULL),
+(55, 'target_67d46b0ac41547.95694289', 'HEPRR-MPA', '133', '2024-2025', '2', 'Number', '2025-03-14 16:44:42', '2025-03-14 16:44:42', NULL),
+(56, 'target_67d46b16f27747.47931433', 'HEPRR-MPA', '135', '2024-2025', '1', 'Number', '2025-03-14 16:44:54', '2025-03-14 16:44:54', NULL),
+(57, 'target_67d46b30dac814.25418298', 'HEPRR-MPA', '137', '2024-2025', '2', 'Number', '2025-03-14 16:45:20', '2025-03-14 16:45:20', NULL),
+(58, 'target_67d46b3dc3f702.23578621', 'HEPRR-MPA', '138', '2024-2025', '2', 'Number', '2025-03-14 16:45:33', '2025-03-14 16:45:33', NULL),
+(59, 'target_67d46b4b855020.28725575', 'HEPRR-MPA', '141', '2024-2025', '0', 'Number', '2025-03-14 16:45:47', '2025-03-14 16:45:47', NULL),
+(60, 'target_67d46b612cc962.92275346', 'HEPRR-MPA', '142', '2024-2025', '5', 'Number', '2025-03-14 16:46:09', '2025-03-14 16:46:09', NULL),
+(61, 'target_67d46b6eb54da7.51193706', 'HEPRR-MPA', '143', '2024-2025', '8', 'Number', '2025-03-14 16:46:22', '2025-03-14 16:46:22', NULL),
+(62, 'target_67d46b7711a139.91181399', 'HEPRR-MPA', '144', '2024-2025', '0', 'Number', '2025-03-14 16:46:31', '2025-03-14 16:46:31', NULL),
+(63, 'target_67d46b84ee8a20.21807408', 'HEPRR-MPA', '145', '2024-2025', '3', 'Number', '2025-03-14 16:46:44', '2025-03-14 16:46:44', NULL),
+(64, 'target_67d46c9a8509d1.88763575', 'HEPRR-MPA', '154', '2024-2025', '1', 'Number', '2025-03-14 16:51:22', '2025-03-14 16:51:22', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cluster_performance_mappings`
+--
+
+CREATE TABLE `cluster_performance_mappings` (
+  `id` bigint UNSIGNED NOT NULL,
+  `ClusterID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ReportingID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `SO_ID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `UserID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `IndicatorID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Response` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ReportingComment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ResponseType` enum('Text','Number','Boolean','Yes/No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Baseline_2023_2024` int DEFAULT NULL,
+  `Target_Year1` int DEFAULT NULL,
+  `Target_Year2` int DEFAULT NULL,
+  `Target_Year3` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `cluster_performance_mappings`
+--
+
+INSERT INTO `cluster_performance_mappings` (`id`, `ClusterID`, `ReportingID`, `SO_ID`, `UserID`, `IndicatorID`, `Response`, `ReportingComment`, `ResponseType`, `Baseline_2023_2024`, `Target_Year1`, `Target_Year2`, `Target_Year3`, `created_at`, `updated_at`) VALUES
+(20, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', 'COSECSA-USER', '1', '22', '22', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:52:36'),
+(21, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', 'COSECSA-USER', '4', '22', '22', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:52:43'),
+(22, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', 'COSECSA-USER', '5', '222', '222', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:52:54'),
+(23, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', 'COSECSA-USER', '6', '22', '22', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:53:01'),
+(24, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', 'COSECSA-USER', '8', '22', '22', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:53:08'),
+(25, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', 'COSECSA-USER', '9', '22', '22', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:53:33'),
+(26, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', 'COSECSA-USER', '20', '22', '22', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-05 16:53:41'),
+(27, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '137', '1', 'ECSA Annual Report 2023 - 2024', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:33:40'),
+(28, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '138', '1', 'EU PerMed', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:34:07'),
+(29, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '139', '400', 'Instagram, Facebook, LinkedIn and X', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:35:16'),
+(30, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '140', '10', 'ILSS and MPA Launch', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:36:12'),
+(31, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '142', '4', 'brochures, press release, banners and flyers', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:38:50'),
+(32, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '143', '2', 'ILSS and MPA', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:39:14'),
+(33, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '144', '1', 'policy brief', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:40:32'),
+(34, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '145', '1', 'Regional M&E Expert Group', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:41:13'),
+(35, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '146', '2', 'FHID and HSCD', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:42:12'),
+(36, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '94', '23', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:45:34'),
+(37, 'ECSA-HC CORPORATE', '40f4c45d95a8419c8cafaaed64ac0030', 'SO9', '689c30ab8e39515be2213eca06e77184', '171', '1', '74th HMC held in Malawi', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:44:36'),
+(38, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '94', '37', 'test comment but ideally should be an actual comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:45:43'),
+(39, 'HSCD', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '3f0ca323eb5b2ab2592bb752d60060ce', '101', '24', 'training in GHD', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:46:15'),
+(40, 'PI Thanzi', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '192f89ddd36af0167a5ed4734e3dd8ca', '95', '23', 'thanzi la mawa', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:45:39'),
+(41, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '148', '5', 'Kenya, Malawi, Eswatini, Tanzania and Lesotho', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:46:16'),
+(42, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '95', '24', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:46:37'),
+(43, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '95', '243', 'Very real figures', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:46:46'),
+(44, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '96', '78', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:46:56'),
+(45, 'ECSA-HC CORPORATE', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '689c30ab8e39515be2213eca06e77184', '103', '3', 'gfhghgg', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:47:58'),
+(46, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '106', '0', 'Non Conducted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:56:26'),
+(47, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '97', '421', 'ssssssssssssssssssss', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:08'),
+(48, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '98', '12', 'gessasdAS', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:21'),
+(49, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '110', '34', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:26'),
+(50, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '100', '12', 'aLLLLLL', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:31'),
+(51, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '112', '4', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:38'),
+(52, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '101', '232', 'NSNSNSNS', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:43'),
+(53, 'COSECSA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '102', '876', 'SADAD', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:50:52'),
+(54, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '149', '2', 'youth friendly services, crossborder refferal system', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:52:57'),
+(55, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '150', '2', 'Health Financing and TB', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:54:11'),
+(56, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '113', '34', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:54:33'),
+(57, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '114', '5', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:54:47'),
+(58, 'HEPRR-MPA', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '115', '5', 'test comment', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:54:59'),
+(59, 'KMME', '40f4c45d95a8419c8cafaaed64ac0030', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '147', '0', 'non conducted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:56:32'),
+(60, 'PI Thanzi', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '192f89ddd36af0167a5ed4734e3dd8ca', '105', '54', 'testing', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 05:59:58'),
+(61, 'PI Thanzi', '40f4c45d95a8419c8cafaaed64ac0030', 'SO2', '192f89ddd36af0167a5ed4734e3dd8ca', '106', '23', 'other', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 06:00:24'),
+(62, 'ECSACONM', '40f4c45d95a8419c8cafaaed64ac0030', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '94', '0', 'trial', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 06:07:00'),
+(63, 'PI Thanzi', '4686e609df4a48d76cfe099192121310', 'SO1', '192f89ddd36af0167a5ed4734e3dd8ca', '95', '43', 'test report', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-21 07:03:54'),
+(64, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '94', '58', 'Trained on 18 SLIPTA auditors, Trained 10 participants on online web based reporting system, 30 were trained Incident Management System', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 05:46:01'),
+(65, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '95', '0', 'No long term training done', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 11:29:11'),
+(66, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '96', '0', 'No participants enrolled', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 05:47:19'),
+(67, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '94', '118', 'Conducted the following training \r\n1. ToT on Simulation held in Dar es salaam in October, 2024 18 participants from MPA Countries were trained \r\n2. Conducted PoE screening tool for National and Sub-National team in Rwanda 100 participants were trained in December, 2024', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 06:52:43'),
+(68, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '95', '0', 'No participants for long term training in the reporting period', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 06:53:22'),
+(69, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '2d2f38bb367a33caf982cbe8f1a34eb6', '96', '0', 'No new enrolment in the e-learning program', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 06:54:10'),
+(70, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '127', '2', 'Convened two cross-border surveillance committee meetings. \r\nThe cross-border meetings were held between Kenya (Lunga-Lunga) and Tanzania (Horo-horo) held in Tanga, between Ethiopia and Kenya (held at Moyale) and', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:04:55'),
+(71, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '127', '2', 'Conducted meeting between Burundi and Tanzania (held in Kigoma Tanzania) and between Zambia and DRC (Kasumbalesa and Chililabombwe held in Kitwe Zambia)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:06:06'),
+(72, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '128', '0', 'No joint investigations conducted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:07:07'),
+(73, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '129', '2', 'Two PoE were supported Moyale Kenya and Moyale Ethiopia PoEs in Kenya-Tanzania border', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:09:03'),
+(74, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '130', '0', 'Non has reached 3 stars', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:09:29'),
+(75, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '128', '0', 'No joint investigations conducted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:11:16'),
+(76, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '129', '2', 'Two PoE were supported Lungalunga and Horohoro PoEs in Kenya-Tanzania border', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:11:33'),
+(77, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '130', '0', 'Non of the labs had reached 3 stars', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:11:58'),
+(78, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO6', '2d2f38bb367a33caf982cbe8f1a34eb6', '143', '5', 'Baseline studies conducted in Kenya, Ethiopia, Saotome and principe, Burundi and Rwanda', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:15:02'),
+(79, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO6', '2d2f38bb367a33caf982cbe8f1a34eb6', '145', '3', 'The CoPs were convened, AMR Control, Laboratory and Surveillance and Research, M&E and Digital Health', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:16:22'),
+(80, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2d2f38bb367a33caf982cbe8f1a34eb6', '143', '0', 'No baselines were done', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:18:15'),
+(81, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2d2f38bb367a33caf982cbe8f1a34eb6', '145', '3', 'Three virtual meetings were held', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 07:18:01'),
+(82, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO1', '3f0ca323eb5b2ab2592bb752d60060ce', '101', '0', 'The Leadership course is to be revamped in the last quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 08:21:14'),
+(83, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '104', '0', 'to be reported at the end of the year after an analysis has been conducted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 08:27:11'),
+(84, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '106', '0', 'No webinars were planned under the quarter under review', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 08:27:51'),
+(85, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '107', '0', 'an exchange visit is planned to be conducted in the 4th quarter of the year. None were planned during the quarter under review', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 08:41:10'),
+(86, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '109', '0', 'These are to be established in the second year of strategic plan', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 08:43:02'),
+(87, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '110', '0', 'This has been planned to be developed in the 4th quarter of the year.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 08:43:46'),
+(88, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '118', '0', 'This is planned under the Thanzi project', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:22:38'),
+(89, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '111', '0', 'This is planned to be implemented in the third year of the strategic plan', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:24:58'),
+(90, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '108', '0', 'This is to be established with COSECSA and ESCACOG in the 4th quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:26:14'),
+(91, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '113', '0', 'Resources yet to be mobilized to support this activity', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:28:00'),
+(92, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '119', '0', 'This is planned under Thanzi project to be reported as such.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:28:44'),
+(93, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '115', '0', 'This is to be conducted in the 3rd quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:29:28'),
+(94, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '114', '0', 'Resources are yet to be mobilized to support activities that will report into this indicator', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:30:14'),
+(95, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '116', '0', 'resources are yet to be mobilized to support activities that will report into this indicator', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:31:09'),
+(96, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '117', '0', 'Assessment to be conducted in 4th quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:40:20'),
+(97, 'HSCD', '63def15211824a4575d63fbd79954c14', 'SO6', '3f0ca323eb5b2ab2592bb752d60060ce', '141', '0', 'Manuscripts are planned to be drafted in the 4th quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:41:56'),
+(98, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '3f0ca323eb5b2ab2592bb752d60060ce', '101', '0', 'No training was planned under the quarter under review', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:58:59'),
+(99, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '104', '0', 'to be reported at the end of the year after the analysis has been conducted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 09:59:53'),
+(100, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '106', '0', 'no webinars were planned under the quarter under review', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:00:20'),
+(101, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '107', '0', 'Exchange visit is to be conducted in the 4th quarter, none were planned during the quarter under review', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:01:01'),
+(102, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '108', '0', 'This is to be established with COSECSA and ECSACOG in the 4th quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:01:46'),
+(103, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '109', '0', 'To be established in the second year of the strategic plan', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:02:21'),
+(104, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '110', '0', 'This has been planned to be developed in the 4th quarter of the year', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:02:58'),
+(105, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '111', '0', 'This has been planned for the third year of the strategic plan', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:03:28'),
+(106, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '113', '0', 'resources are yet to be mobilized to support activities that report into this indicator', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:04:11'),
+(107, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '114', '0', 'resources are yet to be mobilized to support activities that report into this indicator', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:04:24'),
+(108, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '115', '0', 'resources are yet to be mobilized to support activities that report into this indicator', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:04:40'),
+(109, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '116', '0', 'resources are yet to be mobilized to support activities that report into this indicator', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:04:56'),
+(110, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '117', '0', 'Assessment to be conducted in 4th quarter', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:05:28'),
+(111, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '118', '0', 'This is planned under the Thanzi project', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:05:55'),
+(112, 'HSCD', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '3f0ca323eb5b2ab2592bb752d60060ce', '119', '0', 'This is planned under the Thanzi project', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-24 10:06:11'),
+(113, 'GLOBAL FUND TB PROJECT', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', 'acd307c6ed3b5ac5fa755245d6e4b91e', '130', '17', 'Target June 2025 - 18\r\nBurundi **** (4), Mauritius: **** (4) - Dates for initial assessment have been set for ISO1589:22 standard\r\nSeychelles  **** (4) -  Applied for accreditation, waiting for feedback from the accrediting body\r\nSomalia (Mogadishu ** (2), Hargeisa *** (3)), Eritrea ***\r\n\r\nRemaining labs; South Sudan (Not implementing QMS due to high staff turnover)\r\nA TA to reactivate TB culture on solid & liquid media, along with phenotypic DST was conducted in South Sudan in Dec and new staff taken through QMS, however, more comprehensive training is required for the lab to start implementing QMS\r\nAngola, Liberia (no functional Lab, QMS is just being built up)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 06:25:22'),
+(114, 'GLOBAL FUND TB PROJECT', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', 'acd307c6ed3b5ac5fa755245d6e4b91e', '134', '19', '1. ISO 15189 Target June 2025 - 14\r\nAccredited NTRLS - Malawi, Uganda, Kenya, Namibia, Lesotho, Tanzania, Zambia, Zimbabwe, Mozambique (Nampula and Maputo), Ethiopia, Rwanda, Eswatini, Botswana, Seychelles, Burundi\r\n2. ISO 17043 Target - 6, \r\nThe accreditated laboratories are Uganda and Kenya. Countries being supported for 17043 accreditation- Ethiopia, Zambia, Malawi and Mozambique.\r\n3. SRL status- Target- 3\r\nAccredited laboratory -Uganda. Candidate SRLs waiting for final SRL assessment by WHO are Rwanda and Mozambique.\r\n3. Centre of Excellence- 1\r\nThe Ethiopia Public Health Institute (EPHI) has applied to WHO and is awaiting a phyiscal assessment.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 06:42:01'),
+(115, 'GLOBAL FUND TB PROJECT', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', 'acd307c6ed3b5ac5fa755245d6e4b91e', '135', '23', 'Panels (Xpert, LPA, TB Microscopy, DST) were sent to all 21 project countries including Madagascar and Guinea Bissau. \r\nC19 panels were sent to 12 countries.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 06:44:33'),
+(116, 'GLOBAL FUND TB PROJECT', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', 'acd307c6ed3b5ac5fa755245d6e4b91e', '136', '23', 'All showed adequate performance on Xpert, LPA EQA, TB Microscopy and DST.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 06:46:54'),
+(117, 'ILSS', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '45caf049af361e2f332633e649e751b5', '134', '3', '1. Number and percentage of countries attaining and maintaining WHO-SRL status - Target 3\r\nOnly Uganda SRL is accredited\r\nMozambique NTRL, Rwanda NTRL and Tanzania (Kibong\'oto lab) are being supported. The former 2 are scheduled for assessment before June 2025\r\n2. Centre of Excellence (CoE)- UNHLDS and the Ethiopia Public Health Institute are being supported to achieve the CoE status.\r\n3. ISO 17043 target - 3\r\n NHLDS accredited for Malaria RDT, HPV, HIV, EID, CRAG and Microbiology.\r\nBotswana, Malawi ,Zimbabwe and Tanzania have applied for ISO 17043 accreditation', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 07:13:25'),
+(118, 'ILSS', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '45caf049af361e2f332633e649e751b5', '135', '2', 'Percentage of laboratories successfully participating in external quality assurance (EQA) or proficiency testing (PT) schemes (Malaria RDT, AMR). Target for June 2025 - (8/16) 50%\r\n\r\nBaseline - Kenya & Tanzania\r\nPT system upgraded to include all TB, Malaria RDT & AMR\r\nZambia (2 labs) and Uganda participated in the last round -\r\nUganda additional PTs - Culture & sensitivity, CrAg, HPV, gram, HIV EID, Viral load\r\nEnrolment forms for AMR PT received from Angola, Eswatini & South Sudan\r\nEnrolment forms for Malaria RDT PT received from Zimbabwe, South Sudan, Eswatini', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-25 11:31:20'),
+(119, 'ILSS', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '45caf049af361e2f332633e649e751b5', '136', '3', 'Malaria RDT: Zambia (2 labs) and Uganda participated in the last round and scored satisfactory results', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 07:22:26'),
+(120, 'PI Thanzi', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '192f89ddd36af0167a5ed4734e3dd8ca', '95', '5', 'Number of applicants from the region, who were awarded the Thanzi Scholarship for MSc Health Economics through Distance Learning. The three-year training programme commenced in September 2024.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-25 11:40:52'),
+(121, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO6', '817c29bbe02efda4596dfed3ae83746e', '141', '9', 'This includes manuscripts published in Volume 29 issue 2(2024).', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-25 12:12:06'),
+(122, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '817c29bbe02efda4596dfed3ae83746e', '141', '14', 'This includes manuscripts published in Volume 29 Issue 3 (2024) and Volume 29 Issue 4 (2024)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-25 12:13:25'),
+(123, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '94', '17', 'Perioperative Nursing E-Learning Foundational Programme (PeN Programme)\r\n\r\nZimbabwe – 3\r\nBotswana – 1 \r\nKenya – 2\r\nUganda – 4\r\nEswatini – 3\r\nRwanda – 1 \r\nLesotho – 1 \r\nZambia – 1 \r\nMalawi – 1', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 17:58:47'),
+(124, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '95', '11', 'Fellowship in \r\nMidwifery: Eswatini (1), Rwanda (1), Malawi (2)\r\nCritical Care Nursing (CCN): Kenya (4), Malawi (2)\r\nChronic Disease Management (CDM): Malawi (1)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:01:46'),
+(125, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '96', '125', '17 Perioperative Nursing E-Learning Foundational Programme (PeN Programme) Zimbabwe – 3 Botswana – 1 Kenya – 2 Uganda – 4 Eswatini – 3 Rwanda – 1 Lesotho – 1 Zambia – 1 Malawi – 1\r\n\r\n11 Fellowship in Midwifery: Eswatini (1), Rwanda (1), Malawi (2) Critical Care Nursing (CCN): Kenya (4), Malawi (2) Chronic Disease Management (CDM): Malawi (1)\r\n\r\n97 Tanzania - Essential New Bord Care (ENC - Now)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:18:37'),
+(126, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '99', '2', 'perioperative and anesthesia nursing', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:13:58'),
+(127, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '99', '2', 'perioperative and anesthesia nursing', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:13:58'),
+(128, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '100', '2', '2 Kenya', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:14:23'),
+(129, 'ECSACONM', '63def15211824a4575d63fbd79954c14', 'SO2', '70245628e44f3fd58897dab0ecd5d12f', '112', '0', 'none', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:15:37'),
+(130, 'ECSACONM', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '94', '25', 'Country - Frequency:\r\n\r\nKenya - 4\r\nMalawi - 5\r\nLesotho - 3\r\nBotswana - 2\r\nUganda - 2\r\nTanzania - 1\r\nZimbabwe - 2\r\nEswatini - 2\r\nRwanda - 1\r\nZambia - 1', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:25:28'),
+(131, 'ECSACONM', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '95', '11', 'on going \r\n\r\nFellowship in Midwifery: Eswatini (1), Rwanda (1), Malawi (2) Critical Care Nursing (CCN): Kenya (4), Malawi (2) Chronic Disease Management (CDM): Malawi (1)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:26:05'),
+(132, 'ECSACONM', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '70245628e44f3fd58897dab0ecd5d12f', '112', '0', 'None', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:44:22'),
+(133, 'ECSACONM', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '96', '156', 'Supply Chain Management (120 Participants)\r\nKenya (20), Malawi (24), Lesotho (14), Botswana (10), Uganda (12), Tanzania (8), Zimbabwe (10), Eswatini (10), Rwanda (6), Zambia (6)\r\n\r\nPerioperative Nursing (25 Participants)\r\nKenya (4), Malawi (5), Lesotho (3), Botswana (2), Uganda (2), Tanzania (1), Zimbabwe (2), Eswatini (2), Rwanda (1), Zambia (1)\r\n\r\n11 - Fellowship', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:51:21'),
+(134, 'ECSACONM', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '99', '0', 'none', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:51:57'),
+(135, 'ECSACONM', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '70245628e44f3fd58897dab0ecd5d12f', '100', '0', 'none', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-02-28 18:52:13'),
+(136, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '100', '12', 'Between the period of July to September', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-03 06:55:19'),
+(137, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '102', '18861', 'From 1st July to 30 September', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-03 06:56:15'),
+(138, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '100', '11', 'Up to 31st December', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-03 06:59:46'),
+(139, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '102', '9702', '1st October to 31st December', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-03 07:00:17'),
+(140, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '135', '0', 'No country has been supported to expand/establish from July to December 2025, however we received expression of interest to support establishment of EQA in STP', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 08:06:02'),
+(141, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '131', '6', 'Kenya, Zambia, Tanzania, Uganda, Malawi, Ethiopia', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 08:06:12'),
+(142, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '97', '0', 'Scholarship are awarded in the 2nd half of FY Jan-June', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 06:38:42'),
+(143, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '95', '1261', 'Number of Trainees in COSECSA as of 1st quarter of FY 2024-2025', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:26:34'),
+(144, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '94', '13', '6 - 8-month Smile train Post fellowship in Cleft Care\r\n6 - Trainees under Smile Train Exchange Programme\r\n1 - 1 week Cleft Training Workshop', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:28:35'),
+(145, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '98', '0', 'Activity Takes Place in the 2nd Quarter of FY - December', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 06:44:03'),
+(146, 'COSECSA', '63def15211824a4575d63fbd79954c14', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '101', '13', '10 ToTs under Smile Train and RCSI\r\n3 Essential Surgical Training workshops', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 06:46:15'),
+(147, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '94', '0', 'Trainings take place in the 2nd 1/2 of FY', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:30:11'),
+(148, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '95', '0', 'Total Number of Trainees is 1261 as reported in 1st Quarter of FY 2024-2025', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:31:15'),
+(149, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '97', '5', '3 - Japanese Surgical society\r\n1 - BJS Award\r\n1 - Lindsay Stewart', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:32:50'),
+(150, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '98', '270', 'Total number of Examiners attending the COSECSA Examinations', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:33:24'),
+(151, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO1', '817c29bbe02efda4596dfed3ae83746e', '101', '0', 'Workshops to be conducted in the 3rd & 4th Quarter of FY 2024-2025', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:34:47'),
+(152, 'COSECSA', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '817c29bbe02efda4596dfed3ae83746e', '112', '12', '12 - Proposals reviewed and approved by COSECSA IRB', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 07:37:12'),
+(153, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '132', '0', 'So far non of the countries has capacity to detect and report Health Care Associated Infections', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 08:03:06'),
+(154, 'HEPRR-MPA', '63def15211824a4575d63fbd79954c14', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '133', '5', '(Tanzania, Uganda, Zambia, Malawi, Kenya)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-05 08:05:02'),
+(155, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '137', '2', 'The ECSA Annual Performance report and the Global Fund Progress Update and Disbursement Request (PUDR)', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 10:54:30'),
+(156, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '138', '1', 'EU Permed Newsletter prepared and Disseminated', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 10:55:23'),
+(157, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '140', '0', 'None this quarter', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 10:57:04'),
+(158, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '142', '2', 'Printing of the Global Fund Projects banners - ILSS and TB Lab Strengthening', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 10:58:32'),
+(159, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '143', '1', 'An electronic tool for baseline assessment in the GF ILSS Project was developed and shared with countries for data input.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:00:33'),
+(160, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '144', '0', 'None during this quarter', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:01:30'),
+(161, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '145', '0', 'None', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:01:52'),
+(162, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '146', '0', 'The portal was not in place', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:03:18'),
+(163, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '148', '5', 'Profiles for Zambia, Malawi, Zimbabwe, Lesotho and Kenya prepared', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:04:56'),
+(164, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '149', '0', 'None', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:05:21'),
+(165, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '150', '0', 'None', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:05:41'),
+(166, 'KMME', '63def15211824a4575d63fbd79954c14', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '147', '0', 'Quarterly reporting system was not in place', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:06:34'),
+(167, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '137', '1', 'SADC Annual TB Report', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:13:56'),
+(168, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '138', '0', 'none', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:14:21'),
+(169, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '140', '8', 'During the ILSS Project Launch in Kampala, Uganda', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:15:25'),
+(170, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '142', '1', 'Press Release for the ILSS Project Launch', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:16:19'),
+(171, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '143', '3', 'Monitoring visits to Zambia and Malawi: post-GLLP training assessment and sustainability. Ethiopia: progress towards becoming a regional center of excellence.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:18:35'),
+(172, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '144', '0', 'none', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:18:59'),
+(173, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '145', '0', 'We initiated TOR development and contacted ministries of health to nominate KMME expert committee focal persons.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:20:38'),
+(174, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '146', '0', 'Mission reports were submitted directly to supervisors and management during this period, the portal was not ready.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:22:18'),
+(175, 'NFSN', '63def15211824a4575d63fbd79954c14', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '123', '2', 'Facilitated the adoption, adaptation, and implementation of the Regional Adolescent Nutrition Advocacy Strategy in Mauritius and Kenya.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:23:06'),
+(176, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '147', '0', 'To be reported after all reports are submitted', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:22:50'),
+(177, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '148', '2', 'Draft profiles for Tanzania and Eswatini were developed and shared for finalization.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:23:52'),
+(178, 'NFSN', '63def15211824a4575d63fbd79954c14', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '124', '2', 'This was done in Mauritius and Kenya.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:23:53'),
+(179, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '149', '0', 'None', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:24:09'),
+(180, 'NFSN', '63def15211824a4575d63fbd79954c14', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '125', '9', 'All the nine ECSA-HC member states participated in the regional analysis of the Community based mental health intervention.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:25:21'),
+(181, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '150', '0', 'A tool was developed to monitor TB Resolution implementation over the past five years.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:25:34'),
+(182, 'KMME', '10d4a580dfd01d78243298bf6a76db2e', 'SO6', '2e0a64c51a572a45a2c26d21a4683468', '139', '0', 'IT office to provide the numbers', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:26:14'),
+(183, 'NFSN', '63def15211824a4575d63fbd79954c14', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '126', '1', 'This regional landscape analysis found that access to MH care remains limited, with two-thirds of those affected not receiving necessary treatment due to underfunding, shortage of professionals as well as poor infrastructure. In the region, mental health is increasingly recognized but faces cultural stigma, lack of awareness, and limited access to care, especially in rural areas. In the ECSA-HC region, mental health disorders affect up to 20% of the population. Although some countries, are making progress with mental health policies, implementation remains difficult.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:33:46'),
+(184, 'NFSN', '10d4a580dfd01d78243298bf6a76db2e', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '123', '0', 'All the nine ECSA-HC member states had been supported already.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:41:03'),
+(185, 'NFSN', '10d4a580dfd01d78243298bf6a76db2e', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '124', '0', 'This activity had been completed already (all member states were supported).', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:43:16'),
+(186, 'NFSN', '10d4a580dfd01d78243298bf6a76db2e', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '125', '9', 'This was the period a comprehensive report was being written on the policy regional analysis on community based mental health interventions.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:45:00'),
+(187, 'NFSN', '10d4a580dfd01d78243298bf6a76db2e', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '126', '1', 'A report was being compiled on the same.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:46:16'),
+(188, 'NFSN', '4686e609df4a48d76cfe099192121310', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '123', '0', 'Completed', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:48:14'),
+(189, 'NFSN', '4686e609df4a48d76cfe099192121310', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '124', '0', 'Still monitoring the progress in some countries', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:48:44'),
+(190, 'NFSN', '4686e609df4a48d76cfe099192121310', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '125', '9', 'A final report on the policy regional analysis on community based mental health interventions finalized and submitted.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:50:21'),
+(191, 'NFSN', '4686e609df4a48d76cfe099192121310', 'SO4', '6a468a1c6397ea58b2652f02aa8df421', '126', '1', 'Report on this policy landscape analysis on community based mental health interventions was submitted.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:51:51'),
+(192, 'NFSN', '63def15211824a4575d63fbd79954c14', 'SO2', '6a468a1c6397ea58b2652f02aa8df421', '112', '0', 'This was not requested from the member states', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 11:54:29'),
+(193, 'NFSN', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '6a468a1c6397ea58b2652f02aa8df421', '112', '0', 'Have not received requests from the member states.', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-07 12:01:29'),
+(194, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '106', '6', 'Three CoPs have been meeting virtually on quarterly basis between July to December 2024', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 08:55:31'),
+(195, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '110', '7', 'The following platforms have been developed \r\nERF.. DIGITAL POE...ECSA-HC  REPORTING TOOL....TIMESHEETS...\r\n.TIMS REPORTING TOOL...ECSA-HC  COLLABORATION PLATFORM', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 08:56:56'),
+(196, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO2', '2d2f38bb367a33caf982cbe8f1a34eb6', '112', '2', 'TAs were done to Malawi on JEE and Rwanda on After action review for Marburg outbreak', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 08:58:53'),
+(197, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '131', '0', '0', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 10:19:59'),
+(198, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '132', '0', '0', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 10:20:11'),
+(199, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '133', '0', '0', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 10:20:25'),
+(200, 'HEPRR-MPA', '10d4a580dfd01d78243298bf6a76db2e', 'SO5', '2d2f38bb367a33caf982cbe8f1a34eb6', '135', '1', 'STP has been supported to establish the EQA scheme, the team was taken to Mozambique for a learning mission', 'Number', NULL, NULL, NULL, NULL, NULL, '2025-03-10 10:22:48');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ecsahc_timelines`
+--
+
+CREATE TABLE `ecsahc_timelines` (
+  `id` bigint UNSIGNED NOT NULL,
+  `ReportName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Type` enum('Quarterly Reports','Annual Reports','Bi-Annual Reports') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `ReportingID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Year` int NOT NULL,
+  `ClosingDate` date NOT NULL,
+  `status` enum('Pending','In Progress','Completed') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Pending',
+  `LastBiAnnual` enum('Yes','No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `ecsahc_timelines`
+--
+
+INSERT INTO `ecsahc_timelines` (`id`, `ReportName`, `Type`, `Description`, `ReportingID`, `Year`, `ClosingDate`, `status`, `LastBiAnnual`, `created_at`, `updated_at`) VALUES
+(18, 'ECSA-HC QUARTERLY JULY TO SEPTEMBER 2024', 'Quarterly Reports', 'ECSA-HC QUARTERLY JULY TO SEPTEMBER 2024', '63def15211824a4575d63fbd79954c14', 2024, '2025-02-28', 'In Progress', 'No', NULL, NULL),
+(19, 'ECSA-HC QUARTERLY OCTOBER TO DECEMBER 2024', 'Quarterly Reports', 'ECSA-HC QUARTERLY OCTOBER TO DECEMBER 2024', '10d4a580dfd01d78243298bf6a76db2e', 2024, '2025-02-28', 'In Progress', 'No', NULL, NULL),
+(20, 'ECSA-HC QUARTERLY JANUARY TO MARCH 2025', 'Quarterly Reports', 'ECSA-HC QUARTERLY JANUARY TO MARCH 2025', '4686e609df4a48d76cfe099192121310', 2025, '2025-04-15', 'In Progress', 'No', NULL, NULL),
+(21, 'ECSA-HC QUARTERLY APRIL TO JUNE 2025', 'Quarterly Reports', 'ECSA-HC QUARTERLY APRIL TO JUNE 2025', '986c3ec6a449b690fc737eedb38b153b', 2025, '2025-07-15', 'In Progress', 'No', NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `performance_indicators`
+--
+
+CREATE TABLE `performance_indicators` (
+  `id` bigint UNSIGNED NOT NULL,
+  `SO_ID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Indicator_Number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Indicator_Name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ResponseType` enum('Text','Number','Boolean','Yes/No') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Responsible_Cluster` json NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `performance_indicators`
+--
+
+INSERT INTO `performance_indicators` (`id`, `SO_ID`, `Indicator_Number`, `Indicator_Name`, `ResponseType`, `Responsible_Cluster`, `created_at`, `updated_at`) VALUES
+(94, 'SO1', 'SO1.1', 'Number of health personnel trained under short term training programs in member states', 'Number', '[\"HEPRR-MPA\", \"COSECSA\", \"CANECSA\", \"ECSACONM\", \"ECSACOG\", \"GLOBAL FUND TB PROJECT\", \"ILSS\", \"HSCD\"]', '2025-02-14 16:54:58', '2025-03-14 14:37:45'),
+(95, 'SO1', 'SO1.2', 'Number of health personnel trained under long term training programs in member states', 'Number', '[\"PI Thanzi\", \"COSECSA\", \"CANECSA\", \"ECSACONM\", \"ECSACOG\"]', '2025-02-14 16:54:58', '2025-03-14 16:57:06'),
+(96, 'SO1', 'SO1.3', 'No of Health Personenl trained through the e-Learning  Platforms', 'Number', '[\"COSECSA\", \"HEPRR-MPA\"]', '2025-02-14 16:54:58', '2025-03-14 16:14:35'),
+(97, 'SO1', 'SO1.4', 'Number of Trainees/ Fellows enrolled in scholarship programmes.', 'Number', '[\"COSECSA\", \"CANECSA\"]', '2025-02-14 16:54:58', '2025-02-14 16:54:58'),
+(98, 'SO1', 'SO1.5', 'Number of Regional Examiners trained to moderate college exams', 'Number', '[\"COSECSA\"]', '2025-02-14 16:54:58', '2025-03-14 11:45:11'),
+(99, 'SO1', 'SO1.6', 'Number of new fellowship Programmes for Nurses and Midwives (Mental Health, Oncology, Leadership and management, Nursing Education, Pediatric Nursing)', 'Number', '[\"ECSACONM\"]', '2025-02-14 16:54:58', '2025-02-14 16:54:58'),
+(100, 'SO1', 'SO1.7', 'Number of Hospitals (Training Sites) Accredited for training under the collegiate model', 'Number', '[\"ECSACONM\", \"COSECSA\", \"CANECSA\", \"ECSACOG\"]', '2025-02-14 16:54:58', '2025-02-14 16:54:58'),
+(101, 'SO1', 'SO1.8', 'Number of training workshops conducted in Member Countries', 'Number', '[\"PI Thanzi\", \"HEPRR-MPA\", \"FHID\", \"KMME\", \"COSECSA\", \"CANECSA\", \"ECSACONM\", \"ECSACOG\", \"NFSN\", \"GLOBAL FUND TB PROJECT\", \"ECSA-HC CORPORATE\", \"ILSS\", \"TB Lab Project\"]', '2025-02-14 16:54:58', '2025-03-14 14:51:34'),
+(102, 'SO1', 'SO1.9', 'Number of surgical procedures undertaken and cases logged by the specialists trainees/graduates', 'Number', '[\"COSECSA\", \"ECSACOG\"]', '2025-02-14 16:54:58', '2025-02-14 16:54:58'),
+(103, 'SO1', 'SO1.10', 'Number of ECSA-Staff with enhanced capacity through training to effectively support/provide technical assistance to the MS', 'Number', '[\"COSECSA\", \"ECSA-HC CORPORATE\", \"HEPRR-MPA\"]', '2025-02-14 16:54:58', '2025-03-14 16:38:27'),
+(104, 'SO2', 'SO2.1', 'Member states with increased domestic financing for health by 10%', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 14:52:38'),
+(105, 'SO2', 'SO2.2', 'Number of member states adopting and using the Thanzi La Mawa Modelling Framework', 'Number', '[\"PI Thanzi\"]', '2025-02-14 18:21:08', '2025-02-14 18:21:08'),
+(106, 'SO2', 'SO2.3', 'Number of webinars convened', 'Number', '[\"PI Thanzi\", \"HSCD\", \"HEPRR-MPA\", \"FHID\", \"KMME\"]', '2025-02-14 18:21:08', '2025-02-14 18:21:08'),
+(107, 'SO2', 'SO2.4', 'Number of exchange visits conducted', 'Number', '[\"HSCD\", \"HEPRR-MPA\"]', '2025-02-14 18:21:08', '2025-03-14 16:16:00'),
+(108, 'SO2', 'SO2.5', 'Number of regional emergency surgical task forces established', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 14:53:07'),
+(109, 'SO2', 'SO2.6', 'Number of patient advocacy unit established', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 14:53:34'),
+(110, 'SO2', 'SO2.7', 'Number of digital platforms created/ developed', 'Number', '[\"HSCD\", \"HEPRR-MPA\", \"COSECSA\"]', '2025-02-14 18:21:08', '2025-03-14 11:49:08'),
+(111, 'SO2', 'SO2.8', 'Number of member states implementing the shared-decision making model', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 14:54:02'),
+(112, 'SO2', 'SO2.9', 'Number of TAs conducted in member states/project countries', 'Number', '[\"HEPRR-MPA\", \"FHID\", \"KMME\", \"CANECSA\", \"ECSACONM\", \"ECSACOG\", \"NFSN\", \"GLOBAL FUND TB PROJECT\", \"ILSS\"]', '2025-02-14 18:21:08', '2025-03-14 13:34:53'),
+(113, 'SO2', 'SO2.10', 'Number of member states supported to develop or strengthen local production policies aligned with Good Manufacturing Practices (GMP).', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 16:54:32'),
+(114, 'SO2', 'SO2.11', 'Number of member states achieving milestone progress towards WHO maturity level 3 (ML3) for regulatory systems.', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 16:54:10'),
+(115, 'SO2', 'SO2.12', 'Number of regional or national assessments conducted on gaps and opportunities in local manufacturing capacity.', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 17:03:19'),
+(116, 'SO2', 'SO2.13', 'Number of member states supported to implement Quality Improvement (QI) models for patient-centered care in health facilities.', 'Number', '[\"FHID\", \"KMME\", \"COSECSA\"]', '2025-02-14 18:21:08', '2025-03-14 16:02:16'),
+(117, 'SO2', 'SO2.14', 'Number of health facilities implementing tools for measuring patient satisfaction and feedback mechanisms.', 'Number', '[\"KMME\"]', '2025-02-14 18:21:08', '2025-03-14 16:02:37'),
+(118, 'SO2', 'SO2.15', 'Number of countries supported to develop or refine health financing strategies for achieving Universal Health Coverage (UHC).', 'Number', '[\"KMME\"]', '2025-02-14 18:21:08', '2025-03-14 16:03:21'),
+(119, 'SO2', 'SO2.16', 'Number of national dialogues held to discuss innovative financing mechanisms for health systems strengthening.', 'Number', '[\"34c81672a4436e0790f1f91a7940c0ba\"]', '2025-02-14 18:21:08', '2025-03-14 16:03:38'),
+(120, 'SO3', 'SO3.1', 'Number of countries supported to implemen user-friendly RMNCAH Scorecards', 'Number', '[\"FHID\", \"KMME\"]', '2025-02-14 18:26:55', '2025-02-14 18:26:55'),
+(121, 'SO3', 'SO3.2', 'Number of countries supported to develop/review their Adolescent Health Strategies', 'Number', '[\"FHID\", \"KMME\"]', '2025-02-14 18:26:55', '2025-02-14 18:26:55'),
+(122, 'SO3', 'SO3.3', 'Number of countries supported to development/review of country ECD Strategies with a focus on the health components', 'Number', '[\"FHID\", \"KMME\"]', '2025-02-14 18:26:55', '2025-02-14 18:26:55'),
+(123, 'SO4', 'SO4.1', 'Number of countries supported to adopt/adapt and implement the Regional Adolescent Nutrition Advocacy Strategy', 'Number', '[\"NFSN\"]', '2025-02-14 18:28:13', '2025-02-14 18:28:13'),
+(124, 'SO4', 'SO4.2', 'Number of countries supported to disseminate Regional Adolescent Nutrition Advocacy Strategy', 'Number', '[\"NFSN\"]', '2025-02-14 18:28:13', '2025-02-14 18:28:13'),
+(125, 'SO4', 'SO4.3', 'Number of countries participating in a regional analysis on the status of community based mental health interventions', 'Number', '[\"NFSN\"]', '2025-02-14 18:28:13', '2025-02-14 18:28:13'),
+(126, 'SO4', 'SO4.4', 'Comprehensive regional landscape analysis covering all ECSA member states undertaken.', 'Number', '[\"NFSN\"]', '2025-02-14 18:28:13', '2025-02-14 18:28:13'),
+(127, 'SO5', 'SO5.1', 'Number of cross border committee established', 'Number', '[\"HEPRR-MPA\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(128, 'SO5', 'SO5.2', 'Number of joint outbreak investigations conducted between countries in the region', 'Number', '[\"HEPRR-MPA\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(129, 'SO5', 'SO5.3', 'Number of PoEs supported to conduct strategic risk assessments (SRA) and develop PoE Contingency Plan', 'Number', '[\"HEPRR-MPA\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(130, 'SO5', 'SO5.4', 'Number of Laboratories achieving two stars and above in SLIPTA Assessment', 'Number', '[\"HEPRR-MPA\", \"GLOBAL FUND TB PROJECT\"]', '2025-02-14 18:30:43', '2025-03-14 08:35:09'),
+(131, 'SO5', 'SO5.5', 'Number of countries with capacity to detect and report AMR Surveillance Data', 'Number', '[\"HEPRR-MPA\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(132, 'SO5', 'SO5.6', 'Number of Countries with capacity to detect and report Health Care Associated Infections', 'Number', '[\"HEPRR-MPA\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(133, 'SO5', 'SO5.7', 'Number of Countries with Capacity to analyse and utilize data for decision making', 'Number', '[\"HEPRR-MPA\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(134, 'SO5', 'SO5.8', 'Total number of laboratories accredited/maintained accreditation according to regional or international standards.', 'Number', '[\"GLOBAL FUND TB PROJECT\", \"ILSS\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(135, 'SO5', 'SO5.9', 'Number of countries supported to establish/expand EQA scheme', 'Number', '[\"HEPRR-MPA\", \"GLOBAL FUND TB PROJECT\", \"ILSS\"]', '2025-02-14 18:30:43', '2025-02-14 18:30:43'),
+(136, 'SO5', 'SO5.10', 'Number of supported laboratories achieving satisfactory performance on EQA', 'Number', '[\"GLOBAL FUND TB PROJECT\", \"ILSS\"]', '2025-02-14 18:30:43', '2025-03-14 17:04:09'),
+(137, 'SO6', 'SO6.1', 'Number of progress reports produced', 'Number', '[\"HSCD\", \"KMME\", \"COSECSA\", \"HEPRR-MPA\"]', '2025-02-14 18:35:06', '2025-03-14 16:22:07'),
+(138, 'SO6', 'SO6.2', 'Number of newsletters developed and disseminated', 'Number', '[\"KMME\", \"COSECSA\", \"HEPRR-MPA\"]', '2025-02-14 18:35:06', '2025-03-14 16:22:32'),
+(139, 'SO6', 'SO6.3', 'Number of people reached through social media platforms', 'Number', '[\"KMME\", \"COSECSA\"]', '2025-02-14 18:35:06', '2025-03-14 12:52:33'),
+(140, 'SO6', 'SO6.4', 'Number of media houses engaged in corporate and project activities', 'Number', '[\"KMME\"]', '2025-02-14 18:35:06', '2025-02-14 18:35:06'),
+(141, 'SO6', 'SO6.5', 'Number of manuscripts published in a year', 'Number', '[\"PI Thanzi\", \"HEPRR-MPA\", \"FHID\", \"KMME\", \"COSECSA\", \"CANECSA\", \"ECSACONM\", \"ECSACOG\", \"NFSN\", \"ECSA-HC CORPORATE\"]', '2025-02-14 18:35:06', '2025-03-14 16:01:25'),
+(142, 'SO6', 'SO6.6', 'Number of visibility materials developed', 'Number', '[\"KMME\", \"COSECSA\", \"HEPRR-MPA\"]', '2025-02-14 18:35:06', '2025-03-14 16:23:33'),
+(143, 'SO6', 'SO6.7', 'Number of baseline studies and subsequent reviews conducted', 'Number', '[\"HEPRR-MPA\", \"KMME\", \"COSECSA\", \"HSCD\"]', '2025-02-14 18:35:06', '2025-03-14 14:44:53'),
+(144, 'SO6', 'SO6.8', 'Number of policy briefs or knowledge translation products produced from completed research studies', 'Number', '[\"KMME\", \"HEPRR-MPA\"]', '2025-02-14 18:35:06', '2025-03-14 16:24:04'),
+(145, 'SO6', 'SO6.9', 'Total number of COPs and Experts committee meetings convened', 'Number', '[\"HEPRR-MPA\", \"KMME\", \"COSECSA\", \"HSCD\"]', '2025-02-14 18:35:06', '2025-03-14 14:45:41'),
+(146, 'SO6', 'SO6.10', 'Number of Activities undertaken for which mission and technical reports have been uploaded to the reporting portal', 'Number', '[\"KMME\", \"All clusters/projects\"]', '2025-02-14 18:35:06', '2025-02-14 18:35:06'),
+(147, 'SO6', 'SO6.11', 'Programs/clusters/colleges reporting on the respective indicators (n and %)', 'Number', '[\"PI Thanzi\", \"FHID\", \"KMME\", \"CANECSA\", \"ECSACONM\", \"ECSACOG\", \"NFSN\", \"ECSA-HC CORPORATE\"]', '2025-02-14 18:35:06', '2025-03-14 17:05:11'),
+(148, 'SO6', 'SO6.12', 'Country profiles updated annually', 'Number', '[\"KMME\"]', '2025-02-14 18:35:06', '2025-02-14 18:35:06'),
+(149, 'SO6', 'SO6.13', 'Number of best practices packaged/documented', 'Number', '[\"KMME\"]', '2025-02-14 18:35:06', '2025-02-14 18:35:06'),
+(150, 'SO6', 'SO6.14', 'Number of HMC resolutions monitored and reports available', 'Number', '[\"KMME\"]', '2025-02-14 18:35:06', '2025-02-14 18:35:06'),
+(151, 'SO6', 'SO6.15', 'Number of countries and other stakeholders who received packaged best practices', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:35:06', '2025-02-14 18:35:06'),
+(152, 'SO7', 'SO7.1', 'Number of countries engaged to join the ECSA Health Community', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:39:40', '2025-02-14 18:39:40'),
+(153, 'SO7', 'SO7.2', 'Number of Non Member States participating in collaborative activities with ECSA-HC Member States', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:39:40', '2025-02-14 18:39:40'),
+(154, 'SO7', 'SO7.3', 'Number of partnerships established with other organizations', 'Number', '[\"COSECSA\", \"ECSA-HC CORPORATE\", \"HEPRR-MPA\"]', '2025-02-14 18:39:40', '2025-03-14 16:31:56'),
+(155, 'SO7', 'SO7.4', 'Number of countries supported to develop policies or reprogram interventions', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:39:40', '2025-02-14 18:39:40'),
+(156, 'SO7', 'SO7.5', 'ECSA-HC receives accreditation to various platforms as permanent observers', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:39:40', '2025-02-14 18:39:40'),
+(164, 'SO8', 'SO8.1', 'Number of countries fully paid annual contributions for the year 2024-25', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:52:29', '2025-02-14 18:52:29'),
+(165, 'SO8', 'SO8.2', 'Number of countries fully paid their arrears up to June 2025', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:52:29', '2025-02-14 18:52:29'),
+(166, 'SO8', 'SO8.3', 'Availability of Resource Mobilisation Plan', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:52:29', '2025-02-14 18:52:29'),
+(167, 'SO8', 'SO8.4', 'Availability of Donor mapping database', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:52:29', '2025-02-14 18:52:29'),
+(168, 'SO8', 'SO8.5', 'Number of countries engaged  to join ECSA HC', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:52:29', '2025-02-14 18:52:29'),
+(169, 'SO8', 'SO8.6', 'Number of proposals submitted for Funding', 'Number', '[\"ECSA-HC CORPORATE\", \"COSECSA\"]', '2025-02-14 18:52:29', '2025-03-14 13:03:59'),
+(170, 'SO8', 'SO8.7', 'New funding amount mobilized through various sources (amount in US$)', 'Number', '[\"ECSA-HC CORPORATE\", \"COSECSA\"]', '2025-02-14 18:52:29', '2025-03-14 13:04:55'),
+(171, 'SO9', 'SO9.1', 'Number of HMC held annually', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(172, 'SO9', 'SO9.2', 'Availability of online recruitment portal', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(173, 'SO9', 'SO9.3', 'Number of AC meetings held', 'Number', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(174, 'SO9', 'SO9.4', 'Availability of repository for institutional information', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(175, 'SO9', 'SO9.5', 'Availability of organizational review report', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(176, 'SO9', 'SO9.6', 'Availability of updated salary and allowances structures', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(177, 'SO9', 'SO9.7', 'Enterprise-wide risk compliance system fully established', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(178, 'SO9', 'SO9.8', 'Online Recruitment System fully established', 'Yes/No', '[\"ECSA-HC CORPORATE\"]', '2025-02-14 18:55:07', '2025-02-14 18:55:07'),
+(0, 'SO6', 'S06.16', 'Number of research conferences convened', 'Number', '[\"KMME\", \"HEPRR-MPA\"]', '2025-03-14 16:50:43', '2025-03-14 16:50:43'),
+(0, 'SO9', 'SO9.9', 'Number of Governance meetings held', 'Number', '[\"HEPRR-MPA\"]', '2025-03-14 16:52:49', '2025-03-14 16:52:49');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `strategic_objectives`
+--
+
+CREATE TABLE `strategic_objectives` (
+  `id` bigint UNSIGNED NOT NULL,
+  `SO_Name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `SO_Number` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `StrategicObjectiveID` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `strategic_objectives`
+--
+
+INSERT INTO `strategic_objectives` (`id`, `SO_Name`, `Description`, `created_at`, `updated_at`, `SO_Number`, `StrategicObjectiveID`) VALUES
+(1, 'SO1', 'To facilitate the building of human resources for health capacity in member states and Secretariat', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO1', 'SO1'),
+(2, 'SO2', 'To strengthen health systems in the ECSA HC Member States towards attainment of universal health coverage (UHC)', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO2', 'SO2'),
+(3, 'SO3', 'To support the development and facilitate the implementation of RMNCAH strategies in the Member States', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO3', 'SO3'),
+(4, 'SO4', 'To promote the reduction of non-communicable diseases, mental health conditions, injuries, and all forms of malnutrition', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO4', 'SO4'),
+(5, 'SO5', 'To promote the reduction of communicable and infectious diseases and the effects of climate on health', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO5', 'SO5'),
+(6, 'SO6', 'To strengthen knowledge generation, management, and utilization to inform decision-making and programming in health', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO6', 'SO6'),
+(7, 'SO7', 'To foster regional health policy agenda, strategic partnerships, and collaboration towards international commitments (SDGs)', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO7', 'SO7'),
+(8, 'SO8', 'To improve financial sustainability for ECSA-HC Secretariat', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO8', 'SO8'),
+(9, 'SO9', 'To strengthen ECSA-HC Secretariat’s capacity to provide oversight and implement good corporate governance', '2025-02-04 19:14:32', '2025-02-04 19:14:32', 'SO9', 'SO9');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email_verified_at` timestamp NULL DEFAULT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EntityID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ClusterID` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `UserType` enum('MPA','ECSA-HC') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ECSA-HC',
+  `UserCode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Nationality` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `PhoneNumber` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `ParentOrganization` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Sex` enum('Male','Female') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `JobTitle` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `AccountRole` enum('Admin','User','Cluster Head') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'User',
+  `UserID` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `remember_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `EntityID`, `ClusterID`, `UserType`, `UserCode`, `Phone`, `Nationality`, `PhoneNumber`, `Address`, `ParentOrganization`, `Sex`, `JobTitle`, `AccountRole`, `UserID`, `remember_token`, `created_at`, `updated_at`) VALUES
+(112, 'Ayebare Timothy', 'vexa256@gmail.com', NULL, '$2y$12$bwPEf/Ef/9ehEkrHeE4Wxu3dcsQQ8DRia1eGZLxiSt7QACh9Rl/t6', 'ALL', 'HEPRR-MPA', 'ECSA-HC', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Admin', '49f0d4b8d328967e4fbb2d1b338d4e98', '1kxrAtwE7lJy5gRV0agx2X1gLH6PxDsEpfwlPk3VaFsfNgQ3zmMzMak0UQgB', '2025-02-05 00:31:08', '2025-03-14 18:14:00'),
+(116, 'BURUNDI Project Coordinator', 'burundi@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'BURUNDI', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'BURUNDI Project Coordinator', 'User', 'edd0af67f0702024a84fb01022f9a7c6', 'J53XPPTaF6yn4PbfVvTo9JNhHESkHkvw8mrZvRpwgx74g87ASYXvHPHB2QDD', '2025-02-13 16:41:00', '2025-03-12 12:12:15'),
+(117, 'SAO TOME Project Coordinator', 'saotome@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'SAO TOME', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'SAO TOME Project Coordinator', 'User', 'c26765c0ae5ce25f23239289d0cb3176', '90CcjiMHeRzBccutuAEUWOgKKORWYOG3iFuGpqkMSqGqXTD88eJq9QPJbiMh', '2025-02-13 16:41:00', '2025-03-06 09:56:23'),
+(118, 'ETHIOPIA Project Coordinator', 'ethiopia@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'ETHIOPIA', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'ETHIOPIA Project Coordinator', 'User', '1a1617c35c0960709b087f19d4e380e6', 'I4MrrB6ndlpAyL9wHkKrpdUgtUnmhm2mjDoR88ZkPTLfRqO6GPHdhQxZoROO', '2025-02-13 16:41:00', '2025-02-26 11:33:36'),
+(119, 'KENYA Project Coordinator', 'kenya@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'KENYA', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'KENYA Project Coordinator', 'User', '7131dfccf017b1fafb3c535194f8e7f0', 'LZb05NX9UcgQiEtLuQr213E3bFYmJ9SJ8seVg474evRkQ4Yk15cjz5LdMYpJ', '2025-02-13 16:41:00', '2025-03-04 18:55:12'),
+(120, 'RWANDA Project Coordinator', 'rwanda@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'RWANDA', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'RWANDA Project Coordinator', 'User', 'ed4fcc705ba08b872488e1696aed4525', NULL, '2025-02-13 16:41:00', '2025-02-15 08:48:37'),
+(121, 'IGAD Project Coordinator', 'igad@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'IGAD', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'IGAD Project Coordinator', 'User', 'cfcea961afa793ff69a2a83711845a5a', 'zCZZJL6tRl7VeRx7cIgcNY9VCflHiS6Ga9J5z8UZU3aPuaN8SKIAFN0Di10Y', '2025-02-13 16:41:00', '2025-03-02 09:11:34'),
+(123, 'MALAWI Project Coordinator', 'malawi@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'MALAWI', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'MALAWI Project Coordinator', 'User', 'ad57b2de5e8a1a2a169700a26b074309', '49bWLxnUGRXAatMezlJFPZ5GXs6NYh0cDnNRQ7vebw60zwhxy5aZH2Pzw8jZ', '2025-02-13 16:41:00', '2025-02-24 12:56:59'),
+(124, 'DRC Project Coordinator', 'drc@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'DRC', NULL, 'MPA', NULL, '0000000000', 'BURUNDI', '0000000000', 'BURUNDI MPA Project Office', 'BURUNDI MPA Project', 'Male', 'DRC Project Coordinator', 'User', '81a6ebafffd3878d1f85fbda3930a375', '4HFuotfay9N9MI1xtGdiRlCT2Te7qwG3mzqtQ13vl9FhMgSR95vSuFB5C25H', '2025-02-13 16:41:00', '2025-02-17 10:23:30'),
+(139, 'ZAMBIA Project Coordinator', 'zambia@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'ZAMBIA', NULL, 'MPA', NULL, '0000000000', 'Zambian', '0000000000', 'ZAMBIA MPA Project Office', 'ZAMBIA MPA Project', 'Male', 'ZAMBIA Project Coordinator', 'User', '3f6da60e61244d6a4f9dd94a86de765d', NULL, '2025-02-13 13:41:00', '2025-02-15 08:48:37'),
+(785, 'HEPRR-MPA', 'heprr-mpa@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'HEPRR-MPA', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for HEPRR-MPA', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '2d2f38bb367a33caf982cbe8f1a34eb6', 'nXHJbicp0nH28MAUMxauQYy7itfbxkplJ5zNY6xDVqPnfRZ2NHmvk66UxbN0', '2025-02-15 08:43:35', '2025-03-05 13:26:46'),
+(786, 'COSECSA', 'cosecsa@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'COSECSA', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for COSECSA', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '817c29bbe02efda4596dfed3ae83746e', 'VvBSzz5DdFlW6YFq2NshYK7FCE3mMSHiEEZwOhVo4WqIEvS5MWEbbfQZNpCM', '2025-02-15 08:43:35', '2025-02-21 06:26:25'),
+(787, 'CANECSA', 'cancesa@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'CANECSA', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for CANECSA', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', 'c211eacdca08eff61f7be34eb4bfcb56', 'l31E5SIYJJ1X0W17obdhlyMGlzRlnO7Rx9CfltwmC14EzDUpmMOlR9KB0YiC', '2025-02-15 08:43:35', '2025-02-17 05:11:14'),
+(788, 'ECSACONM', 'ecsaconm@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'ECSACONM', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for ECSACONM', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '70245628e44f3fd58897dab0ecd5d12f', 'aqZnAI9jBevIybK6RKjyRqi6HYYjTVr8gdt5YHZNOxzZv7j7HenAQcsZ1uWT', '2025-02-15 08:43:35', '2025-02-28 17:29:36'),
+(980, 'HSCD', 'hscd@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'HSCD', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for HSCD', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '3f0ca323eb5b2ab2592bb752d60060ce', 'mIYZvnWoSdATPNCeVXh7qlEHvlDc8zDJdECRi7Mxt3AsM4zaeiBEwZtnFKxg', '2025-02-15 08:43:35', '2025-02-21 06:37:03'),
+(981, 'All clusters/projects', 'allclustersprojects@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'All clusters/projects', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for All clusters/projects', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', 'eade290a87df076d9c01626fbbb55abe', NULL, '2025-02-15 08:43:35', '2025-02-15 08:48:37'),
+(982, 'PI Thanzi', 'pithanzi@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'PI Thanzi', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for PI Thanzi', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '192f89ddd36af0167a5ed4734e3dd8ca', 'a1Sbih15Y8DAZ6zD8qhGbj8IDaadDSjMNvgFCaaHxlukJjD8Y2AWRShqmLKm', '2025-02-15 08:43:35', '2025-02-25 12:43:21'),
+(983, 'FHID', 'fhid@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'FHID', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for FHID', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', 'acd355979fc3a87c66f07189c902acb9', NULL, '2025-02-15 08:43:35', '2025-02-15 08:48:37'),
+(984, 'KMME', 'kmme@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'KMME', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for KMME', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '2e0a64c51a572a45a2c26d21a4683468', 'CKrKCilh2PsfIwcedHl1sOFZr6JTJmEwOTyPUWXBRshAtFkG7V9KM0d1oQNo', '2025-02-15 08:43:35', '2025-03-07 12:30:44'),
+(985, 'NFSN', 'nfsn@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'NFSN', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for NFSN', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '6a468a1c6397ea58b2652f02aa8df421', 'GkXE2YANxKUQ4N9LN1grXtSjhQnVAO8OnzQCbjLFF5jv1Y8jUCFCk5CWTncz', '2025-02-15 08:43:35', '2025-03-07 12:52:21'),
+(986, 'GLOBAL FUND TB PROJECT', 'globalfundtbproject@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'GLOBAL FUND TB PROJECT', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for GLOBAL FUND TB PROJECT', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', 'acd307c6ed3b5ac5fa755245d6e4b91e', NULL, '2025-02-15 08:43:35', '2025-02-15 08:48:37'),
+(987, 'ECSA-HC CORPORATE', 'ecsahc_corporate@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'ECSA-HC CORPORATE', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for ECSA-HC CORPORATE', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '689c30ab8e39515be2213eca06e77184', '8zVAz07YV2lVwuU6tkAQdKbLvUE7GsPN5vmXUXSr3mskhdj5l2Lcmw5HrGk6', '2025-02-15 08:43:35', '2025-02-21 06:35:03'),
+(988, 'ECSACOG', 'ecsacog@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'ECSACOG', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for ECSACOG', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', 'ec0eb56e65007ba5864b57a51f73a501', NULL, '2025-02-15 08:43:35', '2025-02-15 08:48:37'),
+(989, 'ILSS', 'ilss@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', NULL, 'ILSS', 'ECSA-HC', NULL, '0000000000', 'ECSA-HC', '0000000000', 'Address for ILSS', 'ECSA-HC', NULL, 'Cluster Coordinator', 'User', '45caf049af361e2f332633e649e751b5', '2QbGHYoog232cFe1sk6WdHzYPflVgj3y7MZqXwkYXbe6hnNQ0dVXtgMkNGqi', '2025-02-15 08:43:35', '2025-03-07 08:22:43'),
+(990, 'ECSA-HC Project Coordinator', 'herrp@ecsahc.org', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'ECSA-HC', NULL, 'MPA', '5462772', '+2567282892822', 'ECSA-HC', NULL, 'ArushaTz', 'ECSA-HC', NULL, 'Project Coordinator', 'User', '2676ui2uu22hjs3267327732', NULL, '2025-03-05 06:54:15', '2025-03-05 06:54:15'),
+(991, 'MPA Admin', 'mpa-admin@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'ALL', 'HEPRR-MPA', 'MPA', 'MPA-ADMIN', '0000000000', 'ECSA-HC', '0000000000', 'East Africans', 'East Africans', NULL, 'Admin', 'Admin', 'mpa_admin_uuid', '1YytCQFVy2j3Ng4HCSGUn8SiEbiluTBooJMoVDirGYkizHmPM25aYSr26VER', '2025-03-05 09:25:08', '2025-03-05 18:31:00'),
+(992, 'ECSA-HC Admin', 'ecsahc-admin@reports.ecsahc.com', NULL, '$2y$12$jxs5pe.4ncDI48Xlt2SqwODMWtUxhdqF1RD/zKkMwiPX3NOIvLDgu', 'ALL', 'HEPRR-MPA', 'ECSA-HC', 'ECSA-HC-ADMIN', '0000000000', 'ECSA-HC', '0000000000', 'East Africans', 'East Africans', NULL, 'Admin', 'Admin', 'ecsahc_admin_uuid', NULL, '2025-03-05 09:25:08', '2025-03-05 09:25:08');
+
+
+Thought for 3 seconds### Deep Technical Analysis of ECSA-HC Performance Management System
+
+After conducting a more rigorous examination of the system's logic and implementation, I've identified several critical areas that affect the 100% accuracy claim:
+
+## 1. Performance Calculation Logic Issues
+
+### Achievement Percentage Calculation
+
+```sql
+CASE
+    WHEN cpm.ResponseType = 'Number' THEN
+        CASE
+            WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) = 0 THEN 100
+            WHEN CAST(cit.Target_Value AS DECIMAL) = 0 AND CAST(cpm.Response AS DECIMAL) > 0 THEN 100
+            ELSE (CAST(cpm.Response AS DECIMAL) / CAST(cit.Target_Value AS DECIMAL)) * 100
+        END
+    ...
+```
+
+**Critical Issue**: When a target is zero and actual value is positive, the system assigns 100% achievement. This is mathematically problematic as division by zero is undefined, and automatically assigning 100% could misrepresent performance for indicators where zero targets indicate "no activity expected."
+
+**Recommendation**: Implement a separate handling for zero-target indicators, possibly flagging them for manual review rather than automatic 100% scoring.
+
+
+
+
+### Boolean/Yes-No Response Handling
+
+```sql
+WHEN cpm.ResponseType IN ('Boolean', 'Yes/No') THEN
+    CASE
+        WHEN UPPER(cpm.Response) = UPPER(cit.Target_Value) THEN 100
+        ELSE 0
+    END
+```
+
+**Accuracy Issue**: This binary scoring (100% or 0%) doesn't account for partial achievement or progress toward Boolean targets. For some indicators, this may be appropriate, but for others, it creates artificial performance cliffs.
+
+
+
+## Multi-Period Reporting Inconsistencies
+
+### Bi-Annual Consolidation Logic
+
+```sql
+CASE
+    WHEN MIN(Quarter_In_Half) = 1 AND MAX(Quarter_In_Half) = 2 THEN
+        CASE
+            WHEN MIN(ReportName) LIKE '%JULY TO SEPTEMBER%' THEN 'July-December'
+            WHEN MIN(ReportName) LIKE '%JANUARY TO MARCH%' THEN 'January-June'
+        END
+    ELSE 'Incomplete Half'
+END as Bi_Annual_Period
+```
+
+**Critical Flaw**: This logic relies on report naming conventions rather than date fields for period determination. If report names change format, the entire aggregation logic fails. Additionally, it doesn't handle scenarios where quarters span calendar half-years differently than fiscal half-years.
+
+### Annual Performance Consolidation
+
+```sql
+SUBSTRING([evaluation_year], 1, 4) as Year
+```
+
+**Data Integrity Issue**: Using string manipulation on evaluation_year assumes a specific format. If the format changes, this will produce incorrect results. A proper date type should be used.
+
+## 4. Statistical Methods Concerns
+
+### Performance Trajectory Analysis
+
+```sql
+REGR_SLOPE(Achievement_Percentage, quarter_num) OVER (PARTITION BY ClusterID, IndicatorID)
+```
+
+**Statistical Validity Issue**: Using linear regression on potentially non-linear performance data can lead to misleading trajectory assessments. Additionally, with only 4 quarters of data, the regression may not be statistically significant.
+
+### Outlier Detection
+
+```sql
+ABS((CAST(cpm.Response as DECIMAL) - is.avg_value) / NULLIF(is.std_dev, 0)) > 2
+```
+
+**Statistical Limitation**: Using a fixed z-score threshold of 2 assumes normal distribution of indicator values, which may not be true for all health metrics. Some indicators may have skewed distributions where this threshold is inappropriate.
+
+## 5. Data Quality Framework Gaps
+
+### Comment Quality Assessment
+
+```sql
+CASE
+    WHEN LENGTH(cpm.ReportingComment) < 20 THEN 'Insufficient'
+    WHEN LENGTH(cpm.ReportingComment) BETWEEN 20 AND 100 THEN 'Basic'
+    WHEN LENGTH(cpm.ReportingComment) > 100 THEN 'Detailed'
+END as Comment_Quality
+```
+
+**Logical Flaw**: Comment quality is assessed purely on length, not content. This allows meaningless but lengthy comments to be classified as "Detailed" while concise but informative comments might be labeled "Insufficient."
+
+### Verification Requirements
+
+```sql
+WHEN ABS((CAST(cpm.Response as DECIMAL) - CAST(prev.Response as DECIMAL)) / NULLIF(CAST(prev.Response as DECIMAL), 0)) * 100 > 50 THEN 'Verification Required'
+```
+
+**Edge Case Issue**: This logic fails when previous response is zero, despite the NULLIF function, because the calculation attempts to find the percentage change from zero, which is mathematically undefined.
+
+## 6. Target Management Vulnerabilities
+
+### Target Completeness Calculation
+
+```sql
+(COUNT(DISTINCT cit.IndicatorID) * 100.0 / COUNT(DISTINCT i.IndicatorID)) as Target_Completeness
+```
+
+**Accuracy Issue**: This assumes all indicators are relevant to all clusters, which may not be true. Some indicators may be intentionally excluded for certain clusters, leading to artificially low completeness scores.
+
+### Target Consistency Check
+
+```sql
+ABS((CAST(cit1.Target_Value as DECIMAL) - CAST(cit2.Target_Value as DECIMAL)) / NULLIF(CAST(cit2.Target_Value as DECIMAL), 0)) * 100
+```
+
+**Mathematical Issue**: This percentage change calculation doesn't account for the direction of change, treating increases and decreases of the same magnitude as equivalent, which may not be appropriate for all indicators.
+
+## 7. Database Schema Concerns
+
+### Data Type Inconsistencies
+
+- Target_Value and Response are stored as VARCHAR(200) and VARCHAR(255) respectively, despite being used in numerical calculations
+- This requires constant type casting in queries, introducing potential for errors and performance issues

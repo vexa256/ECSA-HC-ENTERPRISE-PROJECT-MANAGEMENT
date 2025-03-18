@@ -170,8 +170,31 @@ class CRFScoreBoardController extends Controller
                     $validTypes = ['Number', 'Percentage', 'Boolean', 'Yes/No'];
                     if (in_array($responseType, $validTypes)) {
                         if ($responseType === 'Yes/No' || $responseType === 'Boolean') {
-                            if (! in_array($actualValue, [0, 1, '0', '1', '0.0', '1.0'], true)) {
+                            $validYesNoValues = [0, 1, '0', '1', '0.0', '1.0', 'Yes', 'No',
+                                'yes', 'no', 'YES', 'NO', true, false];
+
+                            if (! in_array($actualValue, $validYesNoValues, true)) {
                                 $rowErrors[] = "Invalid yes/no => {$actualValue}";
+                            } else {
+                                // Normalize actual value
+                                $normalizedActual = in_array(
+                                    trim(strtolower((string) $actualValue)),
+                                    ['1', '1.0', 'yes'],
+                                    true
+                                ) ? 1 : 0;
+
+                                // Normalize target value (if exists)
+                                if (! is_null($targetValue)) {
+                                    $normalizedTarget = in_array(
+                                        trim(strtolower((string) $targetValue)),
+                                        ['1', '1.0', 'yes'],
+                                        true
+                                    ) ? 1 : 0;
+                                }
+
+                                // Use normalized values for scoring
+                                $actualFloat = (float) $normalizedActual;
+                                $targetFloat = isset($normalizedTarget) ? (float) $normalizedTarget : 0.0;
                             }
                         } else {
                             if (! is_numeric($actualValue)) {
@@ -181,8 +204,12 @@ class CRFScoreBoardController extends Controller
                     }
                     // If still no rowErrors, proceed
                     if (empty($rowErrors)) {
-                        $actualFloat = floatval($actualValue);
-                        $targetFloat = floatval($targetValue);
+                        if (! isset($actualFloat)) {
+                            $actualFloat = floatval($actualValue);
+                        }
+                        if (! isset($targetFloat)) {
+                            $targetFloat = floatval($targetValue);
+                        }
 
                         if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
                             $rowErrors[] = "Target=0 => cannot compute ratio with {$scoringLogic}";
@@ -637,8 +664,31 @@ class CRFScoreBoardController extends Controller
                     $validTypes = ['Number', 'Percentage', 'Boolean', 'Yes/No'];
                     if (in_array($responseType, $validTypes)) {
                         if ($responseType === 'Yes/No' || $responseType === 'Boolean') {
-                            if (! in_array($actualValue, [0, 1, '0', '1', '0.0', '1.0'], true)) {
+                            $validYesNoValues = [0, 1, '0', '1', '0.0', '1.0', 'Yes', 'No',
+                                'yes', 'no', 'YES', 'NO', true, false];
+
+                            if (! in_array($actualValue, $validYesNoValues, true)) {
                                 $rowErrors[] = "Invalid yes/no => {$actualValue}";
+                            } else {
+                                // Normalize actual value
+                                $normalizedActual = in_array(
+                                    trim(strtolower((string) $actualValue)),
+                                    ['1', '1.0', 'yes'],
+                                    true
+                                ) ? 1 : 0;
+
+                                // Normalize target value (if exists)
+                                if (! is_null($targetValue)) {
+                                    $normalizedTarget = in_array(
+                                        trim(strtolower((string) $targetValue)),
+                                        ['1', '1.0', 'yes'],
+                                        true
+                                    ) ? 1 : 0;
+                                }
+
+                                // Use normalized values for scoring
+                                $actualFloat = (float) $normalizedActual;
+                                $targetFloat = isset($normalizedTarget) ? (float) $normalizedTarget : 0.0;
                             }
                         } else {
                             if (! is_numeric($actualValue)) {
@@ -647,8 +697,12 @@ class CRFScoreBoardController extends Controller
                         }
                     }
                     if (empty($rowErrors)) {
-                        $actualFloat = floatval($actualValue);
-                        $targetFloat = floatval($targetValue);
+                        if (! isset($actualFloat)) {
+                            $actualFloat = floatval($actualValue);
+                        }
+                        if (! isset($targetFloat)) {
+                            $targetFloat = floatval($targetValue);
+                        }
                         if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
                             $rowErrors[] = "Target=0 => can't do ratio for {$scoringLogic}";
                         } else {
