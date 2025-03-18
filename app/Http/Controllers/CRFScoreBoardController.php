@@ -195,6 +195,23 @@ class CRFScoreBoardController extends Controller
                                 // Use normalized values for scoring
                                 $actualFloat = (float) $normalizedActual;
                                 $targetFloat = isset($normalizedTarget) ? (float) $normalizedTarget : 0.0;
+
+                                // Special handling for Yes/No scoring
+                                // For Yes/No indicators:
+                                // If target=No (0) and actual=Yes (1), this exceeds expectations (100%)
+                                // If target=Yes (1) and actual=Yes (1), this meets expectations (100%)
+                                // If target=No (0) and actual=No (0), this meets expectations (100%)
+                                // If target=Yes (1) and actual=No (0), this fails expectations (0%)
+                                if ($normalizedTarget == 0 && $normalizedActual == 1) {
+                                    $scorePercent = 100.0; // Exceeding a "No" target with a "Yes" actual
+                                } else if ($normalizedTarget == $normalizedActual) {
+                                    $scorePercent = 100.0; // Meeting the target exactly
+                                } else {
+                                    $scorePercent = 0.0; // Not meeting the target
+                                }
+
+                                // Skip the regular scoring logic for Yes/No
+                                continue;
                             }
                         } else {
                             if (! is_numeric($actualValue)) {
@@ -386,7 +403,7 @@ class CRFScoreBoardController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // 3. Add a “Header Section” at the top
+        // 3. Add a "Header Section" at the top
 
         // Title row (merged across columns A-F)
         $sheet->mergeCells('A1:F1');
@@ -412,13 +429,13 @@ class CRFScoreBoardController extends Controller
         $sheet->mergeCells('A4:F4');
 
         // If you want to mention baseline and target years specifically:
-        // “Baseline for 2023, Target for 20xx”
+        // "Baseline for 2023, Target for 20xx"
         // (This is optional; adapt to your logic as needed)
         $sheet->setCellValue('A5', "Note: Baseline typically references 2023 (BaselinePAD2023). The Target references {$yearLabel} if applicable.");
         $sheet->mergeCells('A5:F5');
         $sheet->getStyle('A5:F5')->getAlignment()->setWrapText(true);
 
-        // We’ll start the table headers in row 7
+        // We'll start the table headers in row 7
         $headerRow = 7;
 
         // 4. Create the table header
@@ -689,6 +706,23 @@ class CRFScoreBoardController extends Controller
                                 // Use normalized values for scoring
                                 $actualFloat = (float) $normalizedActual;
                                 $targetFloat = isset($normalizedTarget) ? (float) $normalizedTarget : 0.0;
+
+                                // Special handling for Yes/No scoring
+                                // For Yes/No indicators:
+                                // If target=No (0) and actual=Yes (1), this exceeds expectations (100%)
+                                // If target=Yes (1) and actual=Yes (1), this meets expectations (100%)
+                                // If target=No (0) and actual=No (0), this meets expectations (100%)
+                                // If target=Yes (1) and actual=No (0), this fails expectations (0%)
+                                if ($normalizedTarget == 0 && $normalizedActual == 1) {
+                                    $scorePercent = 100.0; // Exceeding a "No" target with a "Yes" actual
+                                } else if ($normalizedTarget == $normalizedActual) {
+                                    $scorePercent = 100.0; // Meeting the target exactly
+                                } else {
+                                    $scorePercent = 0.0; // Not meeting the target
+                                }
+
+                                // Skip the regular scoring logic for Yes/No
+                                continue;
                             }
                         } else {
                             if (! is_numeric($actualValue)) {
@@ -801,4 +835,5 @@ class CRFScoreBoardController extends Controller
         $data['scorecards'] = $scorecards;
         return $data;
     }
+
 }
