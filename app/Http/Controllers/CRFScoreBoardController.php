@@ -210,63 +210,60 @@ class CRFScoreBoardController extends Controller
                                     $scorePercent = 0.0; // Not meeting the target
                                 }
 
-                                // Skip the regular scoring logic for Yes/No
-                                continue;
+                                // Skip the rest of the scoring logic for this iteration
+                                // but DO NOT skip adding this indicator to the scorecards
                             }
                         } else {
                             if (! is_numeric($actualValue)) {
                                 $rowErrors[] = "Non-numeric actual => {$actualValue}";
-                            }
-                        }
-                    }
-                    // If still no rowErrors, proceed
-                    if (empty($rowErrors)) {
-                        // that have already been normalized
-                        if ($responseType !== 'Yes/No' && $responseType !== 'Boolean') {
-                            $actualFloat = floatval($actualValue);
-                            $targetFloat = floatval($targetValue);
-                        }
+                            } else {
+                                // Only process numeric scoring if we're not dealing with Yes/No
+                                // and we have valid numeric values
+                                $actualFloat = floatval($actualValue);
+                                $targetFloat = floatval($targetValue);
 
-                        // Now check if target is zero for ratio-based scoring
-                        if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
-                            $rowErrors[] = "Target=0 => cannot compute ratio with " . $scoringLogic;
-                        } else {
-                            switch ($scoringLogic) {
-                                case 'greater_is_better':
-                                    $ratio        = ($actualFloat / $targetFloat) * 100.0;
-                                    $scorePercent = $ratio;
-                                    break;
-                                case 'less_is_better':
-                                    if ($actualFloat > 0) {
-                                        $ratio        = ($targetFloat / $actualFloat) * 100.0;
-                                        $scorePercent = $ratio;
-                                    } else {
-                                        $rowErrors[] = "Actual=0 => cannot do less_is_better logic.";
-                                    }
-                                    break;
-                                case 'exact_match':
-                                    $scorePercent = ($actualFloat == $targetFloat) ? 100.0 : 0.0;
-                                    break;
-                                case 'range':
-                                    if (! isset($indicator->meta_extra)) {
-                                        $rowErrors[] = "range logic => missing meta_extra";
-                                    } else {
-                                        $extra = json_decode($indicator->meta_extra, true);
-                                        if (isset($extra['min']) && isset($extra['max'])) {
-                                            $minVal = floatval($extra['min']);
-                                            $maxVal = floatval($extra['max']);
-                                            if ($actualFloat < $minVal || $actualFloat > $maxVal) {
-                                                $scorePercent = 0.0;
+                                // Now check if target is zero for ratio-based scoring
+                                if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
+                                    $rowErrors[] = "Target=0 => cannot compute ratio with " . $scoringLogic;
+                                } else {
+                                    switch ($scoringLogic) {
+                                        case 'greater_is_better':
+                                            $ratio        = ($actualFloat / $targetFloat) * 100.0;
+                                            $scorePercent = $ratio;
+                                            break;
+                                        case 'less_is_better':
+                                            if ($actualFloat > 0) {
+                                                $ratio        = ($targetFloat / $actualFloat) * 100.0;
+                                                $scorePercent = $ratio;
                                             } else {
-                                                $scorePercent = 100.0;
+                                                $rowErrors[] = "Actual=0 => cannot do less_is_better logic.";
                                             }
-                                        } else {
-                                            $rowErrors[] = "range => meta_extra missing min/max";
-                                        }
+                                            break;
+                                        case 'exact_match':
+                                            $scorePercent = ($actualFloat == $targetFloat) ? 100.0 : 0.0;
+                                            break;
+                                        case 'range':
+                                            if (! isset($indicator->meta_extra)) {
+                                                $rowErrors[] = "range logic => missing meta_extra";
+                                            } else {
+                                                $extra = json_decode($indicator->meta_extra, true);
+                                                if (isset($extra['min']) && isset($extra['max'])) {
+                                                    $minVal = floatval($extra['min']);
+                                                    $maxVal = floatval($extra['max']);
+                                                    if ($actualFloat < $minVal || $actualFloat > $maxVal) {
+                                                        $scorePercent = 0.0;
+                                                    } else {
+                                                        $scorePercent = 100.0;
+                                                    }
+                                                } else {
+                                                    $rowErrors[] = "range => meta_extra missing min/max";
+                                                }
+                                            }
+                                            break;
+                                        default:
+                                            $rowErrors[] = "Unknown scoring logic => {$scoringLogic}";
                                     }
-                                    break;
-                                default:
-                                    $rowErrors[] = "Unknown scoring logic => {$scoringLogic}";
+                                }
                             }
                         }
                     }
@@ -721,63 +718,60 @@ class CRFScoreBoardController extends Controller
                                     $scorePercent = 0.0; // Not meeting the target
                                 }
 
-                                // Skip the regular scoring logic for Yes/No
-                                continue;
+                                // Skip the rest of the scoring logic for this iteration
+                                // but DO NOT skip adding this indicator to the scorecards
                             }
                         } else {
                             if (! is_numeric($actualValue)) {
                                 $rowErrors[] = "Non-numeric => {$actualValue}";
-                            }
-                        }
-                    }
-                    if (empty($rowErrors)) {
-                        // Only set these values if we're not dealing with Yes/No types
-                        // that have already been normalized
-                        if ($responseType !== 'Yes/No' && $responseType !== 'Boolean') {
-                            $actualFloat = floatval($actualValue);
-                            $targetFloat = floatval($targetValue);
-                        }
+                            } else {
+                                // Only process numeric scoring if we're not dealing with Yes/No
+                                // and we have valid numeric values
+                                $actualFloat = floatval($actualValue);
+                                $targetFloat = floatval($targetValue);
 
-                        // Now check if target is zero for ratio-based scoring
-                        if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
-                            $rowErrors[] = "Target=0 => cannot compute ratio with " . $scoringLogic;
-                        } else {
-                            switch ($scoringLogic) {
-                                case 'greater_is_better':
-                                    $ratio        = ($actualFloat / $targetFloat) * 100.0;
-                                    $scorePercent = $ratio;
-                                    break;
-                                case 'less_is_better':
-                                    if ($actualFloat > 0) {
-                                        $ratio        = ($targetFloat / $actualFloat) * 100.0;
-                                        $scorePercent = $ratio;
-                                    } else {
-                                        $rowErrors[] = "Actual=0 => can't do less_is_better";
-                                    }
-                                    break;
-                                case 'exact_match':
-                                    $scorePercent = ($actualFloat == $targetFloat) ? 100.0 : 0.0;
-                                    break;
-                                case 'range':
-                                    if (! isset($indicator->meta_extra)) {
-                                        $rowErrors[] = "range => missing meta_extra";
-                                    } else {
-                                        $ext = json_decode($indicator->meta_extra, true);
-                                        if (isset($ext['min']) && isset($ext['max'])) {
-                                            $minVal = floatval($ext['min']);
-                                            $maxVal = floatval($ext['max']);
-                                            if ($actualFloat < $minVal || $actualFloat > $maxVal) {
-                                                $scorePercent = 0.0;
+                                // Now check if target is zero for ratio-based scoring
+                                if ($targetFloat == 0.0 && $scoringLogic !== 'exact_match') {
+                                    $rowErrors[] = "Target=0 => cannot compute ratio with " . $scoringLogic;
+                                } else {
+                                    switch ($scoringLogic) {
+                                        case 'greater_is_better':
+                                            $ratio        = ($actualFloat / $targetFloat) * 100.0;
+                                            $scorePercent = $ratio;
+                                            break;
+                                        case 'less_is_better':
+                                            if ($actualFloat > 0) {
+                                                $ratio        = ($targetFloat / $actualFloat) * 100.0;
+                                                $scorePercent = $ratio;
                                             } else {
-                                                $scorePercent = 100.0;
+                                                $rowErrors[] = "Actual=0 => can't do less_is_better";
                                             }
-                                        } else {
-                                            $rowErrors[] = "range => missing min/max in meta_extra";
-                                        }
+                                            break;
+                                        case 'exact_match':
+                                            $scorePercent = ($actualFloat == $targetFloat) ? 100.0 : 0.0;
+                                            break;
+                                        case 'range':
+                                            if (! isset($indicator->meta_extra)) {
+                                                $rowErrors[] = "range => missing meta_extra";
+                                            } else {
+                                                $ext = json_decode($indicator->meta_extra, true);
+                                                if (isset($ext['min']) && isset($ext['max'])) {
+                                                    $minVal = floatval($ext['min']);
+                                                    $maxVal = floatval($ext['max']);
+                                                    if ($actualFloat < $minVal || $actualFloat > $maxVal) {
+                                                        $scorePercent = 0.0;
+                                                    } else {
+                                                        $scorePercent = 100.0;
+                                                    }
+                                                } else {
+                                                    $rowErrors[] = "range => missing min/max in meta_extra";
+                                                }
+                                            }
+                                            break;
+                                        default:
+                                            $rowErrors[] = "Unknown logic => {$scoringLogic}";
                                     }
-                                    break;
-                                default:
-                                    $rowErrors[] = "Unknown logic => {$scoringLogic}";
+                                }
                             }
                         }
                     }
@@ -792,7 +786,6 @@ class CRFScoreBoardController extends Controller
                 if ($scorePercent > 100) {
                     $scorePercent = 100.0;
                 }
-
             }
 
             if (! empty($rowErrors)) {
@@ -806,7 +799,6 @@ class CRFScoreBoardController extends Controller
                     } else {
                         $quickStatus = "Behind";
                     }
-
                 } else {
                     if ($scoringLogic === 'none' || $scoringLogic === 'informational') {
                         $quickStatus = "Informational";
